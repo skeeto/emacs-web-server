@@ -81,7 +81,7 @@
         (httpd-send-header nil "text/html" 404 :Foo "bar")))
     (let ((out (httpd-parse)))
       (should (equal (cl-cadar out) "404"))
-      (should (equal (cadr (assoc "Content-Type" out)) "text/html"))
+      (should (equal (cadr (assoc "Content-Type" out)) "text/html; charset=utf-8"))
       (should (equal (cadr (assoc "Foo" out)) "bar")))))
 
 (ert-deftest httpd-get-servlet-test ()
