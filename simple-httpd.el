@@ -810,7 +810,7 @@ Extra headers can be sent by supplying them like keywords, i.e.
  (httpd-send-header t \"text/plain\" 200 :X-Powered-By \"simple-httpd\")"
   (unless httpd--header-sent
     (setf httpd--header-sent t)
-    (let* ((status-str (cdr (assq status httpd-status-codes)))
+    (let* ((status-str (alist-get status httpd-status-codes))
            (mime-str (httpd--stringify mime))
            (mime-str (if (and (string-prefix-p "text/" mime-str)
                               (not (string-search "charset=" mime-str)))
@@ -907,7 +907,7 @@ The INFO object is optionally inserted into page.  If PROC is t use the
   (httpd-discard-buffer)
   (httpd-log `(error ,status ,info))
   (with-temp-buffer
-    (let ((html (or (cdr (assq status httpd-html)) ""))
+    (let ((html (alist-get status httpd-html ""))
           (contents
            (if (not info)
                ""
