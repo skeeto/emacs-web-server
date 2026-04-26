@@ -878,9 +878,9 @@ the `httpd-current-proc' as the process."
                            (url-insert-entities-in-string uri-path))))
         (with-temp-buffer
           (httpd-log `(directory ,path))
-          (insert "<!DOCTYPE html>\n")
-          (insert "<html>\n<head><title>" title "</title></head>\n")
-          (insert "<body>\n<h2>" title "</h2>\n<hr/>\n<ul>")
+          (insert "<!DOCTYPE html>\n"
+                  "<html>\n<head><title>" title "</title></head>\n"
+                  "<body>\n<h2>" title "</h2>\n<hr/>\n<ul>")
           (dolist (file (directory-files path))
             (unless (eq ?. (aref file 0))
               (let* ((full (expand-file-name file path))
