@@ -873,9 +873,9 @@ PROC is the client process, PATH the directory PATH, URI-PATH the
 request path and REQUEST the request header as alist.  If PROC is t use
 the `httpd-current-proc' as the process."
   (httpd-discard-buffer)
-  (let ((title (concat "Directory listing for "
-                       (url-insert-entities-in-string uri-path))))
-    (if (string-suffix-p "/" uri-path)
+  (if (string-suffix-p "/" uri-path)
+      (let ((title (concat "Directory listing for "
+                           (url-insert-entities-in-string uri-path))))
         (with-temp-buffer
           (httpd-log `(directory ,path))
           (insert "<!DOCTYPE html>\n")
@@ -890,8 +890,8 @@ the `httpd-current-proc' as the process."
                 (insert (format "<li><a href=\"%s%s\">%s%s</a></li>\n"
                                 l tail f tail)))))
           (insert "</ul>\n<hr/>\n</body>\n</html>")
-          (httpd-send-header proc "text/html" 200))
-      (httpd-redirect proc (concat uri-path "/")))))
+          (httpd-send-header proc "text/html" 200)))
+    (httpd-redirect proc (concat uri-path "/"))))
 
 (defun httpd--buffer-size (&optional buffer)
   "Get the BUFFER size in bytes."
