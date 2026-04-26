@@ -425,7 +425,7 @@ PROC is the client process and CHUNK is part of the request as string."
           (when (or (null content-length)
                     (= (buffer-size) (string-to-number content-length)))
             (let* ((content (buffer-string))
-                   (uri (cl-cadar request))
+                   (uri (cadar request))
                    (parsed-uri (httpd-parse-uri (concat uri)))
                    (uri-path (httpd-unhex (nth 0 parsed-uri)))
                    (uri-query (append (nth 1 parsed-uri)
@@ -612,18 +612,18 @@ anaphoric special variables `httpd-path', `httpd-query', and
                             for has-default-p = (and has-default
                                                      (= 3 (length arg)))
                             for arg-name = (symbol-name
-                                            (if has-default (cl-first arg) arg))
+                                            (if has-default (car arg) arg))
                             when has-default collect
-                            (list (cl-first arg)
+                            (list (car arg)
                                   `(let ((value (assoc ,arg-name httpd-query)))
                                      (if value
-                                         (cl-second value)
-                                       ,(cl-second arg))))
+                                         (cadr value)
+                                       ,(cadr arg))))
                             else collect
-                            (list arg `(cl-second
+                            (list arg `(cadr
                                         (assoc ,arg-name httpd-query)))
                             when has-default-p collect
-                            (list (cl-third arg)
+                            (list (caddr arg)
                                   `(not (null (assoc ,arg-name httpd-query)))))
                ,@body)))))))
 
