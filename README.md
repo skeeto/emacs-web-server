@@ -1,15 +1,14 @@
-# simple-httpd
+# Simple Emacs web server (httpd.el)
 
-[![MELPA](http://melpa.org/packages/simple-httpd-badge.svg)](http://melpa.org/#/simple-httpd)
-[![MELPA Stable](http://stable.melpa.org/packages/simple-httpd-badge.svg)](http://stable.melpa.org/#/simple-httpd)
+[![MELPA](http://melpa.org/packages/httpd-badge.svg)](http://melpa.org/#/httpd)
+[![MELPA Stable](http://stable.melpa.org/packages/httpd-badge.svg)](http://stable.melpa.org/#/httpd)
 
 A simple Emacs web server.
 
-This used to be `httpd.el` but there are already several of these out
-there already of varying usefulness. Since the name change, it's been
-stripped down to simply serve files and directory listings. Client
-requests are sanitized so this *should* be safe, but I make no
-guarantees.
+This package has been called `simple-httpd.el` in the past but has been renamed
+back to `httpd.el`. The package can serve files and directory listings, and
+supports custom servlet functions. Client requests are sanitized so this
+*should* be safe, but I make no guarantees.
 
 This package is available on [MELPA](https://melpa.org/).
 
@@ -22,7 +21,7 @@ are enabled by default but can be disabled by setting `httpd-listings`
 to `nil`.
 
 ```cl
-(require 'simple-httpd)
+(require 'httpd)
 (setq httpd-root "/var/www")
 (httpd-start)
 ```
@@ -37,11 +36,11 @@ at `/hello-world` that says hello.
   (insert "hello, " (file-name-nondirectory path)))
 ```
 
-See the comment header in `simple-httpd.el` for full details.
+See the comment header in `httpd.el` for full details.
 
 ## Extensions
 
-Packages built on simple-httpd:
+Packages built on httpd:
 
  * [skewer-mode](https://github.com/skeeto/skewer-mode)
  * [impatient-mode](https://github.com/netguy204/imp.el)
@@ -52,6 +51,6 @@ Packages built on simple-httpd:
 
 The unit tests can (and should usually) be run like so,
 
-    emacs -batch -L . -l simple-httpd-test.el -f ert-run-tests-batch
+    emacs -batch -L . -l httpd-test.el -f ert-run-tests-batch
 
 It does some mocking to avoid using network code during testing.

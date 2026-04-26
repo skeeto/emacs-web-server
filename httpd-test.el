@@ -1,15 +1,15 @@
-;;; simple-httpd-test.el --- simple-httpd unit tests -*- lexical-binding: t -*-
+;;; httpd-test.el --- httpd unit tests -*- lexical-binding: t -*-
 
 ;;; Commentary:
 
 ;; Run standalone with this,
-;;   emacs -batch -L . -l simple-httpd-test.el -f ert-run-tests-batch
+;;   emacs -batch -L . -l httpd-test.el -f ert-run-tests-batch
 
 ;;; Code:
 
 (require 'ert)
 (require 'cl-lib)
-(require 'simple-httpd)
+(require 'httpd)
 
 (defmacro httpd--flet (funcs &rest body)
   "Like `cl-flet' but with dynamic function scope."
@@ -122,4 +122,4 @@
     (cl-loop for (in . out) in tests
              do (should (equal (httpd-escape-html in) out)))))
 
-;;; simple-httpd-test.el ends here
+;;; httpd-test.el ends here

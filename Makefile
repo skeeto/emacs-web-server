@@ -2,16 +2,16 @@
 EMACS = emacs
 BATCH = $(EMACS) -batch -Q -L .
 
-compile: simple-httpd.elc simple-httpd-test.elc
+compile: httpd.elc httpd-test.elc
 
 test: check
-check: simple-httpd-test.elc
-	$(BATCH) -l simple-httpd-test.elc -f ert-run-tests-batch
+check: httpd-test.elc
+	$(BATCH) -l httpd-test.elc -f ert-run-tests-batch
 
 clean:
-	rm -f simple-httpd.elc simple-httpd-test.elc
+	rm -f httpd.elc httpd-test.elc
 
-simple-httpd-test.elc: simple-httpd-test.el simple-httpd.elc
+httpd-test.elc: httpd-test.el httpd.elc
 
 .SUFFIXES: .el .elc
 .el.elc:

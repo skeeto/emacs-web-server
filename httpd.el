@@ -1,4 +1,4 @@
-;;; simple-httpd.el --- Pure Elisp HTTP server -*- lexical-binding: t -*-
+;;; httpd.el --- Pure Elisp HTTP server -*- lexical-binding: t -*-
 
 ;; This is free and unencumbered software released into the public domain.
 
@@ -144,7 +144,7 @@
 (require 'url-util)
 (require 'compat)
 
-(defgroup simple-httpd nil
+(defgroup httpd nil
   "A simple web server."
   :group 'comm)
 
@@ -188,7 +188,7 @@
   "Hook to run when the server has stopped."
   :type 'hook)
 
-(defvar httpd-server-name (format "simple-httpd (Emacs %s)" emacs-version)
+(defvar httpd-server-name (format "httpd (Emacs %s)" emacs-version)
   "String to use in the Server header.")
 
 (defvar httpd-mime-types
@@ -377,7 +377,7 @@ is only one server instance per Emacs instance."
 
 ;;;###autoload
 (defun httpd-running-p ()
-  "Return non-nil if the simple-httpd server is running."
+  "Return non-nil if the httpd server is running."
   (process-live-p httpd--server))
 
 ;;;###autoload
@@ -386,7 +386,7 @@ is only one server instance per Emacs instance."
   (interactive "DServe directory: \n")
   (setf httpd-root directory)
   (httpd-start)
-  (message "Started simple-httpd on %s:%d, serving: %s"
+  (message "Started httpd on %s:%d, serving: %s"
            (cl-case httpd-host
              ((nil local) "localhost")
              (otherwise httpd-host))
@@ -395,7 +395,7 @@ is only one server instance per Emacs instance."
 (defun httpd-batch-start ()
   "Never returns, holding the server open indefinitely for batch mode.
 Logs are redirected to stdout.  To use, invoke Emacs like this:
-  \"emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start\""
+  \"emacs -Q -batch -l httpd.elc -f httpd-batch-start\""
   (if (not noninteractive)
       (error "Only use `httpd-batch-start' in batch mode!")
     (httpd-start)
@@ -810,7 +810,7 @@ the `httpd-current-proc' as the process.
 
 Extra headers can be sent by supplying them like keywords, i.e.
 
- (httpd-send-header t \"text/plain\" 200 :X-Powered-By \"simple-httpd\")"
+ (httpd-send-header t \"text/plain\" 200 :X-Powered-By \"httpd\")"
   (unless httpd--header-sent
     (setf httpd--header-sent t)
     (let* ((status-str (alist-get status httpd-status-codes))
@@ -934,5 +934,5 @@ The INFO object is optionally inserted into page.  If PROC is t use the
       (apply #'httpd-error args)
     (error (httpd-log `(hard-error ,error-case)))))
 
-(provide 'simple-httpd)
-;;; simple-httpd.el ends here
+(provide 'httpd)
+;;; httpd.el ends here
