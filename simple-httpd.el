@@ -561,9 +561,8 @@ A servlet that says hello,
            when (and (> (length item) 0) (eql (aref item 0) ?:))
            collect (cons (intern (substring item 1)) n) into vars
            else collect item into path
-           finally
-           (cl-return
-            (cl-values (intern (string-join path "/")) vars))))
+           finally return
+           (cl-values (intern (string-join path "/")) vars)))
 
 (defvar httpd-path nil
   "Anaphoric variable for `defservlet*'.")
