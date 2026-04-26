@@ -148,52 +148,42 @@
 
 (defcustom httpd-ip-family 'ipv4
   "Web server IP family used by `make-network-process'."
-  :group 'simple-httpd
   :type 'symbol)
 
 (defcustom httpd-host nil
   "Web server host name used by `make-network-process'."
-  :group 'simple-httpd
   :type '(choice (const nil) (const local) string))
 
 (defcustom httpd-port 8080
   "Web server port."
-  :group 'simple-httpd
   :type 'integer)
 
 (defcustom httpd-root "~/public_html"
   "Web server file root."
-  :group 'simple-httpd
   :type 'directory)
 
 (defcustom httpd-serve-files t
   "Enable serving files from `httpd-root'."
-  :group 'simple-httpd
   :type 'boolean)
 
 (defcustom httpd-listings t
   "If true, serve directory listings."
-  :group 'simple-httpd
   :type 'boolean)
 
 (defcustom httpd-servlets t
   "Enable servlets."
-  :group 'simple-httpd
   :type 'boolean)
 
 (defcustom httpd-show-backtrace-when-error nil
   "If true, show backtrace on error page."
-  :group 'simple-httpd
   :type 'boolean)
 
 (defcustom httpd-start-hook nil
   "Hook to run when the server has started."
-  :group 'simple-httpd
   :type 'hook)
 
 (defcustom httpd-stop-hook nil
   "Hook to run when the server has stopped."
-  :group 'simple-httpd
   :type 'hook)
 
 (defvar httpd-server-name (format "simple-httpd (Emacs %s)" emacs-version)
