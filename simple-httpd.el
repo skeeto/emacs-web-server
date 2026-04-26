@@ -489,9 +489,8 @@ emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start"
 (defvar httpd-current-proc nil
   "The process object currently in use.")
 
-(defvar httpd--header-sent nil
+(defvar-local httpd--header-sent nil
   "Buffer-local variable indicating if the header has been sent.")
-(make-variable-buffer-local 'httpd--header-sent)
 
 (defun httpd-resolve-proc (proc)
   "Return the correct process to use. This handles `httpd-current-proc'."
