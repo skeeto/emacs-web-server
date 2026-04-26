@@ -380,9 +380,9 @@ is only one server instance per Emacs instance."
   (httpd-start)
   (message "Started simple-httpd on %s:%d, serving: %s"
            (cl-case httpd-host
-             ((nil) "0.0.0.0")
-             ((local) "localhost")
-             (otherwise httpd-host)) httpd-port directory))
+             ((nil local) "localhost")
+             (otherwise httpd-host))
+           httpd-port directory))
 
 (defun httpd-batch-start ()
   "Never returns, holding the server open indefinitely for batch mode.
