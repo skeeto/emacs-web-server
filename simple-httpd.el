@@ -360,10 +360,10 @@ is only one server instance per Emacs instance."
   "Stop the web server if it is currently running, otherwise do nothing."
   (interactive)
   (when (httpd-running-p)
-    (dolist (proc httpd--clients)
-      (delete-process proc))
+    (mapc #'delete-process httpd--clients)
     (delete-process httpd--server)
-    (setq httpd--server nil)
+    (setq httpd--server nil
+          httpd--clients nil)
     (httpd-log `(stop ,(current-time-string)))
     (run-hooks 'httpd-stop-hook)))
 
