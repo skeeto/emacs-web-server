@@ -408,12 +408,13 @@ Logs are redirected to stdout.  To use, invoke Emacs like this:
   (concat "\"" (substring (sha1 (prin1-to-string (file-attributes file))) -16)
           "\""))
 
-(defun httpd--stringify (designator)
-  "Turn a string DESIGNATOR into a string."
-  (let ((string (format "%s" designator)))
-    (if (keywordp designator)
-        (substring string 1)
-      string)))
+(defun httpd--stringify (obj)
+  "Turn OBJ into a string, e.g., symbols, keywords or strings."
+  (cond
+   ((stringp obj) obj)
+   ((keywordp obj) (substring (symbol-name obj) 1))
+   ((symbolp obj) (symbol-name obj))
+   (t (format "%s" obj))))
 
 ;; Networking code
 
