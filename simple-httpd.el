@@ -715,17 +715,20 @@ element is the fragment."
     (push (if p1 (httpd-parse-args (substring uri (1+ p1) p2))) retval)
     (push (substring uri 0 (or p1 p2)) retval)))
 
+(defconst httpd--html-entities
+  '((?& . "&amp;")
+    (?' . "&apos;")
+    (?\" . "&quot;")
+    (?< . "&lt;")
+    (?> . "&gt;"))
+  "Alist of HTML entities escaped by `httpd-escape-html-buffer'.")
+
 (defun httpd-escape-html-buffer ()
   "Escape current buffer contents to be safe for inserting into HTML."
   (goto-char (point-min))
   (while (re-search-forward "[<>&'\"]" nil t)
     (replace-match
-     (alist-get (aref (match-string 0) 0)
-                '((?& . "&amp;")
-                  (?' . "&apos;")
-                  (?\" . "&quot;")
-                  (?< . "&lt;")
-                  (?> . "&gt;"))))))
+     (alist-get (aref (match-string 0) 0) httpd--html-entities))))
 
 (defun httpd-escape-html (string)
   "Escape STRING so that it's safe to insert into an HTML document."
