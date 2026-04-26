@@ -363,7 +363,7 @@ is only one server instance per Emacs instance."
 
 ;;;###autoload
 (defun httpd-serve-directory (directory)
-  "Start the web server with given `directory' as `httpd-root'."
+  "Start the web server with given DIRECTORY as `httpd-root'."
   (interactive "DServe directory: \n")
   (setf httpd-root directory)
   (httpd-start)
@@ -386,7 +386,7 @@ emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start"
 ;; Utility
 
 (defun httpd-date-string (&optional date)
-  "Return an HTTP date string (RFC 1123)."
+  "Return DATE as HTTP date string (RFC 1123)."
   (format-time-string "%a, %e %b %Y %T GMT" date t))
 
 (defun httpd-etag (file)
@@ -395,7 +395,7 @@ emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start"
           "\""))
 
 (defun httpd--stringify (designator)
-  "Turn a string designator into a string."
+  "Turn a string DESIGNATOR into a string."
   (let ((string (format "%s" designator)))
     (if (keywordp designator)
         (substring string 1)
@@ -404,12 +404,13 @@ emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start"
 ;; Networking code
 
 (defun httpd--connection-close-p (request)
-  "Return non-nil if the client requested \"connection: close\"."
+  "Return non-nil if the REQUEST has \"connection: close\"."
   (or (equal '("close") (cdr (assoc "Connection" request)))
       (equal '("HTTP/1.0") (cddr (assoc "GET" request)))))
 
 (defun httpd--filter (proc chunk)
-  "Runs each time client makes a request."
+  "Process called each time client makes a request.
+PROC is the client process and CHUNK is part of the request as string."
   (with-current-buffer (process-get proc :request-buffer)
     (goto-char (point-max))
     (insert chunk)
@@ -446,15 +447,16 @@ emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start"
                 (process-send-eof proc)))))))))
 
 (defun httpd--log (_server proc _message)
-  "Runs each time a new client connects."
+  "Runs each time a new client PROC connects to the server."
   (with-current-buffer (generate-new-buffer " *httpd-client*")
     (process-put proc :request-buffer (current-buffer)))
   (set-process-sentinel proc #'httpd--sentinel)
   (httpd-log (list 'connection (car (process-contact proc)))))
 
 (defun httpd--sentinel (proc message)
-  "Runs when a client closes the connection."
-  (unless (string-match-p "^open " message)
+  "Runs when a client PROC closes the connection.
+MESSAGE describes the state change."
+  (unless (string-prefix-p "open " message)
     (let ((buffer (process-get proc :request-buffer)))
       (when buffer
         (kill-buffer buffer)))))
@@ -462,7 +464,7 @@ emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start"
 ;; Logging
 
 (defun httpd-log (item)
-  "Pretty print a lisp object to the log."
+  "Pretty print ITEM to the log."
   (with-current-buffer (get-buffer-create "*httpd*")
     (setf buffer-read-only nil)
     (let ((follow (= (point) (point-max))))
@@ -483,7 +485,8 @@ emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start"
   "Buffer-local variable indicating if the header has been sent.")
 
 (defun httpd-resolve-proc (proc)
-  "Return the correct process to use.  This handles `httpd-current-proc'."
+  "Return the correct process to use.
+Return `httpd-current-proc' if PROC is t."
   (if (eq t proc) httpd-current-proc proc))
 
 (defmacro with-httpd-buffer (proc mime &rest body)
@@ -672,7 +675,7 @@ if it failed to parse a complete HTTP header."
       (decode-coding-string (url-unhex-string nonplussed t) 'utf-8))))
 
 (defun httpd-parse-args (argstr)
-  "Parse a string containing URL encoded arguments."
+  "Parse ARGSTR containing URL encoded arguments."
   (unless (zerop (length argstr))
     (mapcar (lambda (str)
               (mapcar #'httpd-unhex (split-string str "=")))
@@ -756,13 +759,13 @@ element is the fragment."
      (t                       (httpd-send-file      proc path request)))))
 
 (defun httpd/ (proc uri-path _query request)
-  "Default root servlet which serves files when httpd-serve-files is T."
+  "Default root servlet which serves files when `httpd-serve-files' is t."
   (if (and httpd-serve-files httpd-root)
       (httpd-serve-root proc httpd-root uri-path request)
     (httpd-error proc 403)))
 
 (defun httpd-get-mime (ext)
-  "Fetch MIME type given the file extention."
+  "Fetch MIME type given the file extension EXT."
   (or (and ext (cdr (assoc (downcase ext) httpd-mime-types)))
       "application/octet-stream"))
 
@@ -770,7 +773,7 @@ element is the fragment."
 
 (defun httpd-send-header (proc mime status &rest header-keys)
   "Send an HTTP header followed by the current buffer.
-MIME is the mime type and STATUS the HTTP status code.  If PROC is T use
+MIME is the mime type and STATUS the HTTP status code.  If PROC is t use
 the `httpd-current-proc' as the process.
 
 Extra headers can be sent by supplying them like keywords, i.e.
@@ -801,15 +804,16 @@ Extra headers can be sent by supplying them like keywords, i.e.
 
 (defun httpd-redirect (proc path &optional code)
   "Redirect the client to PATH (default 301).
-If PROC is T use the `httpd-current-proc' as the process."
+If PROC is t use the `httpd-current-proc' as the process."
   (httpd-log (list 'redirect path))
   (httpd-discard-buffer)
   (with-temp-buffer
     (httpd-send-header proc "text/plain" (or code 301) :Location path)))
 
 (defun httpd-send-file (proc path &optional req)
-  "Serve file to the given client.
-If PROC is T use the `httpd-current-proc' as the process."
+  "Serve file at PATH to the given client PROC.
+REQ is the request.  If PROC is t use the `httpd-current-proc' as the
+process."
   (httpd-discard-buffer)
   (let ((req-etag (cadr (assoc "If-None-Match" req)))
         (etag (httpd-etag path))
@@ -827,7 +831,7 @@ If PROC is T use the `httpd-current-proc' as the process."
 
 (defun httpd-send-directory (proc path uri-path)
   "Serve a file listing to the client.
-If PROC is T use the `httpd-current-proc' as the process."
+If PROC is t use the `httpd-current-proc' as the process."
   (httpd-discard-buffer)
   (let ((title (concat "Directory listing for "
                        (url-insert-entities-in-string uri-path))))
@@ -850,7 +854,7 @@ If PROC is T use the `httpd-current-proc' as the process."
       (httpd-redirect proc (concat uri-path "/")))))
 
 (defun httpd--buffer-size (&optional buffer)
-  "Get the buffer size in bytes."
+  "Get the BUFFER size in bytes."
   (let ((orig enable-multibyte-characters)
         (size 0))
     (with-current-buffer (or buffer (current-buffer))
@@ -861,7 +865,7 @@ If PROC is T use the `httpd-current-proc' as the process."
 
 (defun httpd-error (proc status &optional info)
   "Send an error page appropriate for STATUS to the client.
-The INFO object is optionally inserted into page.  If PROC is T use the
+The INFO object is optionally inserted into page.  If PROC is t use the
 `httpd-current-proc' as the process."
   (httpd-discard-buffer)
   (httpd-log `(error ,status ,info))
