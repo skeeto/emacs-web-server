@@ -814,6 +814,10 @@ Extra headers can be sent by supplying them like keywords, i.e.
            (mime-str (httpd--stringify mime))
            (mime-str (if (and (string-prefix-p "text/" mime-str)
                               (not (string-search "charset=" mime-str)))
+                         ;; IDEA: Either guess the charset from the buffer or
+                         ;; introduce a defcustom httpd-charset. At least we
+                         ;; hard-code utf-8 only once here and not multiple
+                         ;; times as before.
                          (concat mime-str "; charset=utf-8")
                        mime-str))
            (headers `(("Server" . ,httpd-server-name)
