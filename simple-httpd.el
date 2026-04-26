@@ -352,9 +352,9 @@ instance per Emacs instance."
    :server   t
    :host     httpd-host
    :family   httpd-ip-family
-   :filter   'httpd--filter
+   :filter   #'httpd--filter
    :coding   'binary
-   :log      'httpd--log)
+   :log      #'httpd--log)
   (run-hooks 'httpd-start-hook))
 
 ;;;###autoload
@@ -686,7 +686,7 @@ if it failed to parse a complete HTTP header."
   "Parse a string containing URL encoded arguments."
   (unless (zerop (length argstr))
     (mapcar (lambda (str)
-              (mapcar 'httpd-unhex (split-string str "=")))
+              (mapcar #'httpd-unhex (split-string str "=")))
             (split-string argstr "&"))))
 
 (defun httpd-parse-uri (uri)
@@ -740,8 +740,8 @@ element is the fragment."
   (let ((clean (expand-file-name (httpd-clean-path path) (or root httpd-root))))
     (if (file-directory-p clean)
         (let* ((dir (file-name-as-directory clean))
-               (indexes (cl-mapcar (apply-partially 'concat dir) httpd-indexes))
-               (existing (cl-remove-if-not 'file-exists-p indexes)))
+               (indexes (cl-mapcar (apply-partially #'concat dir) httpd-indexes))
+               (existing (cl-remove-if-not #'file-exists-p indexes)))
           (or (car existing) dir))
       clean)))
 
@@ -750,10 +750,10 @@ element is the fragment."
   (if (not httpd-servlets)
       'httpd/
     (cl-labels ((cat (x)
-                  (concat "httpd/" (mapconcat 'identity (reverse x) "/"))))
+                  (concat "httpd/" (mapconcat #'identity (reverse x) "/"))))
       (let ((parts (cdr (split-string (directory-file-name uri-path) "/"))))
         (or
-         (cl-find-if 'fboundp (mapcar 'intern-soft
+         (cl-find-if #'fboundp (mapcar #'intern-soft
                                       (cl-maplist #'cat (reverse parts))))
          'httpd/)))))
 
