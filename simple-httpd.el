@@ -721,12 +721,14 @@ element is the fragment."
 (defun httpd-escape-html-buffer ()
   "Escape current buffer contents to be safe for inserting into HTML."
   (goto-char (point-min))
-  (while (re-search-forward "[<>&]" nil t)
+  (while (re-search-forward "[<>&'\"]" nil t)
     (replace-match
-     (cl-case (aref (match-string 0) 0)
-       (?< "&lt;")
-       (?> "&gt;")
-       (?& "&amp;")))))
+     (alist-get (aref (match-string 0) 0)
+                '((?& . "&amp;")
+                  (?' . "&apos;")
+                  (?\" . "&quot;")
+                  (?< . "&lt;")
+                  (?> . "&gt;"))))))
 
 (defun httpd-escape-html (string)
   "Escape STRING so that it's safe to insert into an HTML document."
