@@ -7,7 +7,7 @@
 ;;              Daniel Mendler <mail@daniel-mendler.de>
 ;; URL: https://github.com/skeeto/emacs-http-server
 ;; Version: 1.5.1
-;; Package-Requires: ((emacs "27.1"))
+;; Package-Requires: ((emacs "26.1") (compat "30"))
 ;; Keywords: network, comm
 
 ;;; Commentary:
@@ -141,6 +141,7 @@
 (require 'cl-lib)
 (require 'pp)
 (require 'url-util)
+(require 'compat)
 
 (defgroup simple-httpd nil
   "A simple web server."
@@ -496,15 +497,14 @@ of body, automatically serve it to an HTTP client with an HTTP header
 indicating the specified MIME type.  Additionally, `standard-output' is
 set to this output buffer and `httpd-current-proc' is set to PROC."
   (declare (indent defun))
-  (let ((proc-sym (make-symbol "--proc--")))
-    `(let ((,proc-sym ,proc))
-       (with-temp-buffer
-         (setf major-mode 'httpd-buffer)
-         (let ((standard-output (current-buffer))
-               (httpd-current-proc ,proc-sym))
-           ,@body)
-         (unless httpd--header-sent
-           (httpd-send-header ,proc-sym ,mime 200))))))
+  (cl-once-only (proc)
+    `(with-temp-buffer
+       (setf major-mode 'httpd-buffer)
+       (let ((standard-output (current-buffer))
+             (httpd-current-proc ,proc))
+         ,@body)
+       (unless httpd--header-sent
+         (httpd-send-header ,proc ,mime 200)))))
 
 (defun httpd-discard-buffer ()
   "Don't respond using current server buffer (`with-httpd-buffer').
@@ -595,9 +595,7 @@ The original path, query, and request can be accessed by the
 anaphoric special variables `httpd-path', `httpd-query', and
 `httpd-request'."
   (declare (indent defun))
-  (let ((path-lexical (gensym))
-        (query-lexical (gensym))
-        (request-lexical (gensym)))
+  (cl-with-gensyms (path-lexical query-lexical request-lexical)
     (cl-multiple-value-bind (path vars) (httpd-parse-endpoint endpoint)
       `(defservlet ,path ,mime (,path-lexical ,query-lexical ,request-lexical)
          (let ((httpd-path ,path-lexical)
