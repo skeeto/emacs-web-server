@@ -660,8 +660,7 @@ actually serve up files."
        (setf httpd--header-sent t) ; Don't actually use this temp buffer
        (if (= (length uri-path) ,chop)
            (httpd-redirect t ,path-root)
-         (let ((path (substring uri-path ,chop)))
-           (httpd-serve-root t ,root path request))))))
+         (httpd-serve-root t ,root (substring uri-path ,chop) request)))))
 
 ;; Request parsing
 
