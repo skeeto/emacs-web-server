@@ -241,6 +241,8 @@
   "File served by default when accessing a directory.")
 
 (defvar httpd-status-codes
+  ;; IDEA: Reuse url-http-codes from url-http. However url-http-codes does not
+  ;; use standard strings for some reason, e.g., "100 Continue with request".
   '((100 . "Continue")
     (101 . "Switching Protocols")
     (102 . "Processing")
