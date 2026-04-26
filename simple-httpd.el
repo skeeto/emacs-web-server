@@ -192,7 +192,9 @@
   "String to use in the Server header.")
 
 (defvar httpd-mime-types
-  ;; IDEA: parse /etc/mime.types and use here as well
+  ;; IDEA: parse /etc/mime.types and use here as well. Alternatively use
+  ;; mailcap-mime-extensions, which are already taken from /etc/mime.types.
+  ;; However the definitions in mailcap lack the charset=utf-8 suffix.
   '(("png"  . "image/png")
     ("gif"  . "image/gif")
     ("jpg"  . "image/jpeg")
