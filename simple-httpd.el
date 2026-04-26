@@ -381,10 +381,11 @@ is only one server instance per Emacs instance."
   (process-live-p httpd--server))
 
 ;;;###autoload
-(defun httpd-serve-directory (directory)
-  "Start the web server with given DIRECTORY as `httpd-root'."
+(defun httpd-serve-directory (&optional directory)
+  "Start the web server with given DIRECTORY as `httpd-root'.
+If DIRECTORY is nil use the current `default-directory'."
   (interactive "DServe directory: \n")
-  (setf httpd-root directory)
+  (setf httpd-root (or directory default-directory))
   (httpd-start)
   (message "Started simple-httpd on %s:%d, serving: %s"
            (cl-case httpd-host
