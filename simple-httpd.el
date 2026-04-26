@@ -327,6 +327,12 @@
 </body></html>"))
   "HTML for various errors.")
 
+(defvar httpd--server nil
+  "Server process.")
+
+(defvar httpd--clients nil
+  "Client processes.")
+
 ;; User interface
 
 ;;;###autoload
@@ -337,30 +343,34 @@ is only one server instance per Emacs instance."
   (interactive)
   (httpd-stop)
   (httpd-log `(start ,(current-time-string)))
-  (make-network-process
-   :name     "httpd"
-   :service  httpd-port
-   :server   t
-   :host     httpd-host
-   :family   httpd-ip-family
-   :filter   #'httpd--filter
-   :coding   'binary
-   :log      #'httpd--log)
+  (setq httpd--server
+        (make-network-process
+         :name     "httpd"
+         :service  httpd-port
+         :server   t
+         :host     httpd-host
+         :family   httpd-ip-family
+         :filter   #'httpd--filter
+         :coding   'binary
+         :log      #'httpd--log))
   (run-hooks 'httpd-start-hook))
 
 ;;;###autoload
 (defun httpd-stop ()
   "Stop the web server if it is currently running, otherwise do nothing."
   (interactive)
-  (when (process-status "httpd")
-    (delete-process "httpd")
+  (when (httpd-running-p)
+    (dolist (proc httpd--clients)
+      (delete-process proc))
+    (delete-process httpd--server)
+    (setq httpd--server nil)
     (httpd-log `(stop ,(current-time-string)))
     (run-hooks 'httpd-stop-hook)))
 
 ;;;###autoload
 (defun httpd-running-p ()
   "Return non-nil if the simple-httpd server is running."
-  (not (null (process-status "httpd"))))
+  (process-live-p httpd--server))
 
 ;;;###autoload
 (defun httpd-serve-directory (directory)
@@ -449,6 +459,7 @@ PROC is the client process and CHUNK is part of the request as string."
 
 (defun httpd--log (_server proc _message)
   "Runs each time a new client PROC connects to the server."
+  (push proc httpd--clients)
   (with-current-buffer (generate-new-buffer " *httpd-client*")
     (process-put proc :request-buffer (current-buffer)))
   (set-process-sentinel proc #'httpd--sentinel)
@@ -458,6 +469,7 @@ PROC is the client process and CHUNK is part of the request as string."
   "Runs when a client PROC closes the connection.
 MESSAGE describes the state change."
   (unless (string-prefix-p "open " message)
+    (cl-callf2 delq proc httpd--clients)
     (let ((buffer (process-get proc :request-buffer)))
       (when buffer
         (kill-buffer buffer)))))
