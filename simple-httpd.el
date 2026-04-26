@@ -514,6 +514,12 @@ Returns a process for future response."
 
 (defmacro defservlet (name mime path-query-request &rest body)
   "Defines a simple httpd servlet.
+
+NAME is the servlet name as symbol.
+MIME the mime-type as symbol.
+PATH-QUERY-REQUEST is the argument list.
+BODY is the function body.
+
 The servlet runs in a temporary buffer which is automatically served to
 the client along with a header.
 
@@ -534,7 +540,7 @@ A servlet that says hello,
          ,@body))))
 
 (defun httpd-parse-endpoint (symbol)
-  "Parse an endpoint definition template for use with `defservlet*'."
+  "Parse an endpoint template SYMBOL for use with `defservlet*'."
   (cl-loop for item in (split-string (symbol-name symbol) "/")
            for n upfrom 0
            when (and (> (length item) 0) (eql (aref item 0) ?:))
@@ -558,6 +564,12 @@ A servlet that says hello,
 
 (defmacro defservlet* (endpoint mime args &rest body)
   "Like `defservlet', but automatically bind variables/arguments to the request.
+
+ENDPOINT is the path as symbol.
+MIME the mime-type as symbol.
+ARGS is the argument list.
+BODY is the function body.
+
 Trailing components of the ENDPOINT can be bound by prefixing these
 components with a colon, acting like a template.
 
@@ -728,7 +740,8 @@ element is the fragment."
     (concat "./" unsplit)))
 
 (defun httpd-gen-path (path &optional root)
-  "Translate GET to secure path in ROOT (`httpd-root')."
+  "Generate secure path in ROOT from request PATH.
+ROOT defaults to `httpd-root'."
   (let ((clean (expand-file-name (httpd-clean-path path) (or root httpd-root))))
     (if (file-directory-p clean)
         (let* ((dir (file-name-as-directory clean))
@@ -750,7 +763,9 @@ element is the fragment."
          'httpd/)))))
 
 (defun httpd-serve-root (proc root uri-path &optional request)
-  "Securely serve a file from ROOT from under PATH."
+  "Securely serve a file from ROOT.
+PROC is the client process, URI-PATH the request path and REQUEST the
+request header as alist."
   (let* ((path (httpd-gen-path uri-path root))
          (status (httpd-status path)))
     (cond
@@ -759,7 +774,9 @@ element is the fragment."
      (t                       (httpd-send-file      proc path request)))))
 
 (defun httpd/ (proc uri-path _query request)
-  "Default root servlet which serves files when `httpd-serve-files' is t."
+  "Default root servlet which serves files when `httpd-serve-files' is t.
+PROC is the client process, URI-PATH the request path and REQUEST the
+request header as alist."
   (if (and httpd-serve-files httpd-root)
       (httpd-serve-root proc httpd-root uri-path request)
     (httpd-error proc 403)))
@@ -831,7 +848,9 @@ process."
 
 (defun httpd-send-directory (proc path uri-path)
   "Serve a file listing to the client.
-If PROC is t use the `httpd-current-proc' as the process."
+PROC is the client process, PATH the directory PATH, URI-PATH the
+request path and REQUEST the request header as alist.  If PROC is t use
+the `httpd-current-proc' as the process."
   (httpd-discard-buffer)
   (let ((title (concat "Directory listing for "
                        (url-insert-entities-in-string uri-path))))
@@ -889,7 +908,7 @@ The INFO object is optionally inserted into page.  If PROC is t use the
     (httpd-send-header proc "text/html" status)))
 
 (defun httpd--error-safe (&rest args)
-  "Call httpd-error and report failures to *httpd*."
+  "Call `httpd-error' with ARGS and log failures to *httpd*."
   (condition-case error-case
       (apply #'httpd-error args)
     (error (httpd-log `(hard-error ,error-case)))))
