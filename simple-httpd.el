@@ -669,7 +669,7 @@ actually serve up files."
 
 (defun httpd--normalize-header (header)
   "Destructively capitalize the components of HEADER."
-  (mapconcat #'capitalize (split-string header "-") "-"))
+  (replace-regexp-in-string "[^-]+" #'capitalize header t))
 
 (defun httpd-parse ()
   "Parse HTTP header in current buffer into association list.
