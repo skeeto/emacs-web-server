@@ -377,7 +377,7 @@ is only one server instance per Emacs instance."
 (defun httpd-batch-start ()
   "Never returns, holding the server open indefinitely for batch mode.
 Logs are redirected to stdout.  To use, invoke Emacs like this:
-emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start"
+  \"emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start\""
   (if (not noninteractive)
       (error "Only use `httpd-batch-start' in batch mode!")
     (httpd-start)
@@ -734,7 +734,7 @@ element is the fragment."
   "Clean dangerous .. from PATH and remove the leading slash."
   (let* ((sep (if (member system-type '(windows-nt ms-dos)) "[/\\]" "/"))
          (split (delete ".." (split-string path sep)))
-         (unsplit (mapconcat 'identity (delete "" split) "/")))
+         (unsplit (mapconcat #'identity (delete "" split) "/")))
     (concat "./" unsplit)))
 
 (defun httpd-gen-path (path &optional root)
@@ -912,5 +912,4 @@ The INFO object is optionally inserted into page.  If PROC is t use the
     (error (httpd-log `(hard-error ,error-case)))))
 
 (provide 'simple-httpd)
-
 ;;; simple-httpd.el ends here
