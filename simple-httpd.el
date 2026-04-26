@@ -641,13 +641,6 @@ anaphoric special variables `httpd-path', `httpd-query', and
                                   `(not (null (assoc ,arg-name httpd-query)))))
                ,@body)))))))
 
-(font-lock-add-keywords
- 'emacs-lisp-mode
- '(("(\\<\\(defservlet\\*?\\)\\> +\\([^ ()]+\\) +\\([^ ()]+\\)"
-    (1 'font-lock-keyword-face)
-    (2 'font-lock-function-name-face)
-    (3 'font-lock-type-face))))
-
 (defmacro httpd-def-file-servlet (name root)
   "Defines a servlet that serves files from ROOT under the route NAME.
 
