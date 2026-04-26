@@ -455,7 +455,7 @@ emacs -Q -batch -l simple-httpd.elc -f httpd-batch-start"
               (when (httpd--connection-close-p request)
                 (process-send-eof proc)))))))))
 
-(defun httpd--log (server proc message)
+(defun httpd--log (_server proc _message)
   "Runs each time a new client connects."
   (with-current-buffer (generate-new-buffer " *httpd-client*")
     (process-put proc :request-buffer (current-buffer)))
@@ -766,7 +766,7 @@ element is the fragment."
      ((file-directory-p path) (httpd-send-directory proc path uri-path))
      (t                       (httpd-send-file      proc path request)))))
 
-(defun httpd/ (proc uri-path query request)
+(defun httpd/ (proc uri-path _query request)
   "Default root servlet which serves files when httpd-serve-files is T."
   (if (and httpd-serve-files httpd-root)
       (httpd-serve-root proc httpd-root uri-path request)
