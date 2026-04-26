@@ -518,8 +518,7 @@ set to this output buffer and `httpd-current-proc' is set to PROC."
        (let ((standard-output (current-buffer))
              (httpd-current-proc ,proc))
          ,@body)
-       (unless httpd--header-sent
-         (httpd-send-header ,proc ,mime 200)))))
+       (httpd-send-header ,proc ,mime 200))))
 
 (defun httpd-discard-buffer ()
   "Don't respond using current server buffer (`with-httpd-buffer').
@@ -810,14 +809,14 @@ the `httpd-current-proc' as the process.
 Extra headers can be sent by supplying them like keywords, i.e.
 
  (httpd-send-header t \"text/plain\" 200 :X-Powered-By \"simple-httpd\")"
-  (let ((status-str (cdr (assq status httpd-status-codes)))
-        (headers `(("Server" . ,httpd-server-name)
-                   ("Date" . ,(httpd-date-string))
-                   ("Connection" . "keep-alive")
-                   ("Content-Type" . ,(httpd--stringify mime))
-                   ("Content-Length" . ,(httpd--buffer-size)))))
-    (unless httpd--header-sent
-      (setf httpd--header-sent t)
+  (unless httpd--header-sent
+    (setf httpd--header-sent t)
+    (let ((status-str (cdr (assq status httpd-status-codes)))
+          (headers `(("Server" . ,httpd-server-name)
+                     ("Date" . ,(httpd-date-string))
+                     ("Connection" . "keep-alive")
+                     ("Content-Type" . ,(httpd--stringify mime))
+                     ("Content-Length" . ,(httpd--buffer-size)))))
       (with-temp-buffer
         (insert (format "HTTP/1.1 %d %s\r\n" status status-str))
         (cl-loop for (header value) on header-keys by #'cddr
