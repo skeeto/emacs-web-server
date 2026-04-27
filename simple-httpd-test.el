@@ -120,8 +120,19 @@
                   "a &lt;b&gt;bold&lt;/b&gt; request")
                  ("alpha & beta" .
                   "alpha &amp; beta")
+                 ("don't" .
+                  "don&apos;t")
+                 ("\"quoted\"" .
+                  "&quot;quoted&quot;")
                  ("&&&" .
                   "&amp;&amp;&amp;"))))
+    (cl-loop for (in . out) in tests
+             do (should
+                 (equal (with-temp-buffer
+                          (insert in)
+                          (httpd-escape-html-buffer)
+                          (buffer-string))
+                        out)))
     (cl-loop for (in . out) in tests
              do (should (equal (httpd-escape-html in) out)))))
 

@@ -755,14 +755,14 @@ element is the fragment."
   (goto-char (point-min))
   (while (re-search-forward "[<>&'\"]" nil t)
     (replace-match
-     (alist-get (aref (match-string 0) 0) httpd--html-entities))))
+     (alist-get (char-after (match-beginning 0)) httpd--html-entities))))
 
-(defun httpd-escape-html (string)
-  "Escape STRING so that it's safe to insert into an HTML document."
-  (with-temp-buffer
-    (insert string)
-    (httpd-escape-html-buffer)
-    (buffer-string)))
+(defun httpd-escape-html (str)
+  "Escape STR so that it's safe to insert into an HTML document."
+  (replace-regexp-in-string
+   "[<>&'\"]"
+   (lambda (c) (alist-get (aref c 0) httpd--html-entities))
+   str))
 
 ;; Path handling
 
@@ -898,7 +898,7 @@ request path and REQUEST the request header as alist.  If PROC is t use
 the `httpd-current-proc' as the process."
   (if (string-suffix-p "/" uri-path)
       (let ((title (concat "Directory listing for "
-                           (url-insert-entities-in-string uri-path))))
+                           (httpd-escape-html uri-path))))
         (httpd--ensure-buffer
           (httpd-log `(directory ,path))
           (insert "<!DOCTYPE html>\n"
@@ -908,7 +908,7 @@ the `httpd-current-proc' as the process."
             (unless (eq ?. (aref file 0))
               (let* ((full (expand-file-name file path))
                      (tail (if (file-directory-p full) "/" ""))
-                     (f (url-insert-entities-in-string file))
+                     (f (httpd-escape-html file))
                      (l (url-hexify-string file)))
                 (insert (format "<li><a href=\"%s%s\">%s%s</a></li>\n"
                                 l tail f tail)))))
