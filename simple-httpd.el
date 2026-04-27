@@ -704,7 +704,7 @@ if it failed to parse a complete HTTP header."
     (let ((method (match-string 1))
           (path (decode-coding-string (match-string 2) 'iso-8859-1))
           (version (match-string 3))
-          (headers ()))
+          (headers nil))
       (goto-char (match-end 0))
       (while (looking-at "\\([-!#-'*+.0-9A-Z^_`a-z|~]+\\): *\\([^\r]+\\)\r\n")
         (goto-char (match-end 0))
@@ -725,7 +725,7 @@ if it failed to parse a complete HTTP header."
 
 (defun httpd-parse-args (argstr)
   "Parse ARGSTR containing URL encoded arguments."
-  (unless (zerop (length argstr))
+  (unless (equal argstr "")
     (mapcar (lambda (str)
               (mapcar #'httpd-unhex (split-string str "=")))
             (split-string argstr "&"))))
@@ -787,22 +787,22 @@ ROOT defaults to `httpd-root'."
   (let ((clean (expand-file-name (httpd-clean-path path) (or root httpd-root))))
     (if (file-directory-p clean)
         (let* ((dir (file-name-as-directory clean))
-               (indexes (cl-mapcar (apply-partially #'concat dir) httpd-indexes))
+               (indexes (mapcar (apply-partially #'concat dir) httpd-indexes))
                (existing (cl-remove-if-not #'file-exists-p indexes)))
           (or (car existing) dir))
       clean)))
 
 (defun httpd-get-servlet (uri-path)
   "Determine the servlet to be executed for URI-PATH."
-  (if (not httpd-servlets)
-      'httpd/
-    (cl-labels ((cat (x)
-                  (concat "httpd/" (string-join (reverse x) "/"))))
-      (let ((parts (cdr (split-string (directory-file-name uri-path) "/"))))
-        (or
-         (cl-find-if #'fboundp (mapcar #'intern-soft
-                                       (cl-maplist #'cat (reverse parts))))
-         'httpd/)))))
+  (or
+   (and httpd-servlets
+        (cl-find-if
+         #'fboundp
+         (cl-maplist
+          (lambda (x)
+            (intern-soft (string-join (cons "httpd" (reverse x)) "/")))
+          (nreverse (cdr (split-string (directory-file-name uri-path) "/"))))))
+   'httpd/))
 
 (defun httpd-serve-root (proc root uri-path &optional request)
   "Securely serve a file from ROOT.
