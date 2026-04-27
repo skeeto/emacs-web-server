@@ -657,7 +657,6 @@ actually serve up files."
          (path-root (concat short-root "/"))
          (chop (length path-root)))
     `(defservlet ,name nil (uri-path query request)
-       (setf httpd--header-sent t) ; Don't actually use this temp buffer
        (if (= (length uri-path) ,chop)
            (httpd-redirect t ,path-root)
          (httpd-serve-root t ,root (substring uri-path ,chop) request)))))
