@@ -524,7 +524,8 @@ set to this output buffer and `httpd-current-proc' is set to PROC."
        (let ((standard-output (current-buffer))
              (httpd-current-proc ,proc))
          ,@body)
-       (httpd-send-header ,proc ,mime 200))))
+       (unless httpd--header-sent
+         (httpd-send-header ,proc ,mime 200)))))
 
 (defun httpd-discard-buffer ()
   "Don't respond using current server buffer (`with-httpd-buffer').
@@ -810,34 +811,35 @@ the `httpd-current-proc' as the process.
 Extra headers can be sent by supplying them like keywords, i.e.
 
  (httpd-send-header t \"text/plain\" 200 :X-Powered-By \"simple-httpd\")"
-  (unless httpd--header-sent
-    (setf httpd--header-sent t)
-    (let* ((status-str (alist-get status httpd-status-codes))
-           (mime-str (httpd--stringify mime))
-           (mime-str (if (and (string-prefix-p "text/" mime-str)
-                              (not (string-search "charset=" mime-str)))
-                         ;; IDEA: Either guess the charset from the buffer or
-                         ;; introduce a defcustom httpd-charset. At least we
-                         ;; hard-code utf-8 only once here and not multiple
-                         ;; times as before.
-                         (concat mime-str "; charset=utf-8")
-                       mime-str))
-           (headers `(("Server" . ,httpd-server-name)
-                      ("Date" . ,(httpd-date-string))
-                      ("Connection" . "keep-alive")
-                      ("Content-Type" . ,mime-str)
-                      ("Content-Length" . ,(httpd--buffer-size))
-                      ,@(cl-loop for (header value) on header-keys by #'cddr
-                                 collect (cons (httpd--stringify header) value)))))
-      (with-temp-buffer
-        (insert (format "HTTP/1.1 %d %s\r\n" status status-str))
-        (cl-loop for (header . value) in headers do
-                 (insert (format "%s: %s\r\n" header value)))
-        (insert "\r\n")
-        (process-send-region (httpd-resolve-proc proc)
-                             (point-min) (point-max)))
+  (when httpd--header-sent
+    (error "Header already sent"))
+  (setq httpd--header-sent t)
+  (let* ((status-str (alist-get status httpd-status-codes))
+         (mime-str (httpd--stringify mime))
+         (mime-str (if (and (string-prefix-p "text/" mime-str)
+                            (not (string-search "charset=" mime-str)))
+                       ;; IDEA: Either guess the charset from the buffer or
+                       ;; introduce a defcustom httpd-charset. At least we
+                       ;; hard-code utf-8 only once here and not multiple
+                       ;; times as before.
+                       (concat mime-str "; charset=utf-8")
+                     mime-str))
+         (headers `(("Server" . ,httpd-server-name)
+                    ("Date" . ,(httpd-date-string))
+                    ("Connection" . "keep-alive")
+                    ("Content-Type" . ,mime-str)
+                    ("Content-Length" . ,(httpd--buffer-size))
+                    ,@(cl-loop for (header value) on header-keys by #'cddr
+                               collect (cons (httpd--stringify header) value)))))
+    (with-temp-buffer
+      (insert (format "HTTP/1.1 %d %s\r\n" status status-str))
+      (cl-loop for (header . value) in headers do
+               (insert (format "%s: %s\r\n" header value)))
+      (insert "\r\n")
       (process-send-region (httpd-resolve-proc proc)
-                           (point-min) (point-max)))))
+                           (point-min) (point-max)))
+    (process-send-region (httpd-resolve-proc proc)
+                         (point-min) (point-max))))
 
 (defun httpd-redirect (proc path &optional code)
   "Redirect the client to PATH (default 301).
