@@ -21,7 +21,7 @@ Once loaded, there are only two interactive functions to worry about:
 are enabled by default but can be disabled by setting `httpd-listings`
 to `nil`.
 
-```cl
+```emacs-lisp
 (require 'simple-httpd)
 (setq httpd-root "/var/www")
 (httpd-start)
@@ -32,9 +32,17 @@ to `nil`.
 Servlets can be defined with `defservlet`. This one creates at servlet
 at `/hello-world` that says hello.
 
-```cl
+```emacs-lisp
 (defservlet hello-world text/plain (path)
   (insert "hello, " (file-name-nondirectory path)))
+```
+
+Another example at `/greeting/<name>` with optional parameter
+`?greeting=<greeting>`.
+
+```emacs-lisp
+(defservlet* greeting/:name text/plain ((greeting "hi" greeting-p))
+  (insert (format "%s, %s (provided: %s)" greeting name greeting-p)))
 ```
 
 See the comment header in `simple-httpd.el` for full details.
@@ -50,8 +58,5 @@ Packages built on simple-httpd:
 
 ## Unit tests
 
-The unit tests can (and should usually) be run like so,
-
-    emacs -batch -L . -l simple-httpd-test.el -f ert-run-tests-batch
-
-It does some mocking to avoid using network code during testing.
+The unit tests can be run with `make test`. The tests do some mocking to avoid
+using network code during testing.
