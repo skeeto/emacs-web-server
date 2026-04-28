@@ -29,11 +29,11 @@ to `nil`.
 
 ## Servlets
 
-Servlets can be defined with `defservlet`. This one creates at servlet
+Servlets can be defined with `httpd-servlet`. This one creates at servlet
 at `/hello-world` that says hello.
 
 ```emacs-lisp
-(defservlet hello-world text/plain (path)
+(httpd-servlet hello-world text/plain (path)
   (insert "hello, " (file-name-nondirectory path)))
 ```
 
@@ -41,7 +41,7 @@ Another example at `/greeting/<name>` with optional parameter
 `?greeting=<greeting>`.
 
 ```emacs-lisp
-(defservlet* greeting/:name text/plain ((greeting "hi" greeting-p))
+(httpd-servlet* greeting/:name text/plain ((greeting "hi" greeting-p))
   (insert (format "%s, %s (provided: %s)" greeting name greeting-p)))
 ```
 

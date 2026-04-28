@@ -108,7 +108,7 @@
   (should (equal (httpd-parse-args "") ())))
 
 (ert-deftest httpd-parse-endpoint ()
-  "Test endpoint parsing for defservlet*."
+  "Test endpoint parsing for `httpd-servlet*'."
   (should (equal (httpd-parse-endpoint 'example/foos/:n/:d)
                  '(example/foos ((n . 2) (d . 3))))))
 

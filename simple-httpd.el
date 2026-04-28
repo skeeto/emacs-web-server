@@ -33,42 +33,42 @@
 ;; alist).  These are ordered by general importance so that some can be
 ;; ignored.  Two macros are provided to help with writing servlets.
 
-;;  * `with-httpd-buffer' -- Creates a temporary buffer that is
+;;  * `httpd-with-buffer' -- Creates a temporary buffer that is
 ;;    automatically served to the client at the end of the body.
 ;;    Additionally, `standard-output' is set to this output
 ;;    buffer.  For example, this servlet says hello,
 
 ;;     (defun httpd/hello-world (proc path &rest args)
-;;       (with-httpd-buffer proc "text/plain"
+;;       (httpd-with-buffer proc "text/plain"
 ;;         (insert "hello, " (file-name-nondirectory path))))
 
 ;; This servlet be viewed at http://localhost:8080/hello-world/Emacs
 
-;; * `defservlet' -- Similar to the above macro but totally hides the
+;; * `httpd-servlet' -- Similar to the above macro but totally hides the
 ;;   process object from the servlet itself.  The above servlet can be
 ;;   re-written identically like so,
 
-;;     (defservlet hello-world text/plain (path)
+;;     (httpd-servlet hello-world text/plain (path)
 ;;       (insert "hello, " (file-name-nondirectory path)))
 
-;; Note that `defservlet' automatically sets `httpd-current-proc'.  See
-;; below.
+;; Note that `httpd-servlet' automatically sets `httpd-current-proc'.
+;; See below.
 
 ;; The "function parameters" part can be left empty or contain up to
 ;; three parameters corresponding to the final three servlet
 ;; parameters.  For example, a servlet that shows *scratch* and doesn't
 ;; need parameters,
 
-;;     (defservlet scratch text/plain ()
+;;     (httpd-servlet scratch text/plain ()
 ;;       (insert-buffer-substring (get-buffer-create "*scratch*")))
 
-;; A higher level macro `defservlet*' wraps this lower-level
-;; `defservlet' macro, automatically binding variables to components
+;; A higher level macro `httpd-servlet*' wraps this lower-level
+;; `httpd-servlet' macro, automatically binding variables to components
 ;; of the request.  For example, this binds parts of the request path
 ;; and one query parameter.  Request components not provided by the
 ;; client are bound to nil.
 
-;;     (defservlet* packages/:package/:version text/plain (verbose)
+;;     (httpd-servlet* packages/:package/:version text/plain (verbose)
 ;;       (insert (format "%s\n%s\n" package version))
 ;;       (princ (get-description package version))
 ;;       (when verbose
@@ -88,12 +88,12 @@
 ;;   * `httpd-log'         -- log an object to the `httpd-log-buffer'
 
 ;; Some of these functions require a process object, which isn't
-;; passed to `defservlet' servlets.  Use t in place of the process
+;; passed to `httpd-servlet' servlets.  Use t in place of the process
 ;; argument to use `httpd-current-proc' (like `standard-output').
 
 ;; If you just need to serve static from some location under some
-;; route on the server, use `httpd-def-file-servlet'.  It expands into
-;; a `defservlet' that serves files.
+;; route on the server, use `httpd-file-servlet'.  It expands into
+;; a `httpd-servlet' that serves files.
 
 ;;; History:
 
@@ -539,7 +539,7 @@ Reuse the current buffer if it is a temporary httpd buffer."
            (when (buffer-live-p ,temp)
              (kill-buffer ,temp)))))))
 
-(defmacro with-httpd-buffer (proc mime &rest body)
+(defmacro httpd-with-buffer (proc mime &rest body)
   "Create temporary buffer and serve it to the client.
 Create a temporary buffer, set it as the current buffer, and, at the end
 of body, automatically serve it to an HTTP client with an HTTP header
@@ -555,12 +555,12 @@ set to this output buffer and `httpd-current-proc' is set to PROC."
          (httpd-send-header ,proc ,mime 200)))))
 
 (defun httpd-discard-buffer ()
-  "Don't respond using current server buffer (`with-httpd-buffer').
+  "Don't respond using current server buffer (`httpd-with-buffer').
 Returns a process for future response."
   (when (eq major-mode 'httpd-buffer) (setf httpd--header-sent t))
   httpd-current-proc)
 
-(defmacro defservlet (name mime path-query-request &rest body)
+(defmacro httpd-servlet (name mime path-query-request &rest body)
   "Defines a simple httpd servlet.
 
 NAME is the servlet name as symbol.
@@ -573,22 +573,22 @@ the client along with a header.
 
 A servlet that serves the contents of *scratch*,
 
-    (defservlet scratch text/plain ()
+    (httpd-servlet scratch text/plain ()
       (insert-buffer-substring (get-buffer-create \"*scratch*\")))
 
 A servlet that says hello,
 
-    (defservlet hello-world text/plain (path)
+    (httpd-servlet hello-world text/plain (path)
       (insert \"hello, \" (file-name-nondirectory path))))"
   (declare (indent defun))
   (let ((proc-sym (make-symbol "proc"))
         (fname (intern (concat "httpd/" (symbol-name name)))))
     `(defun ,fname (,proc-sym ,@path-query-request &rest ,(gensym))
-       (with-httpd-buffer ,proc-sym ,(httpd--stringify mime)
+       (httpd-with-buffer ,proc-sym ,(httpd--stringify mime)
          ,@body))))
 
 (defun httpd-parse-endpoint (symbol)
-  "Parse an endpoint template SYMBOL for use with `defservlet*'."
+  "Parse an endpoint template SYMBOL for use with `httpd-servlet*'."
   (cl-loop for item in (split-string (symbol-name symbol) "/")
            for n upfrom 0
            when (and (> (length item) 0) (eql (aref item 0) ?:))
@@ -598,19 +598,19 @@ A servlet that says hello,
            (cl-values (intern (string-join path "/")) vars)))
 
 (defvar httpd-path nil
-  "Anaphoric variable for `defservlet*'.")
+  "Dynamic variable bound by `httpd-servlet*'.")
 
 (defvar httpd-query nil
-  "Anaphoric variable for `defservlet*'.")
+  "Dynamic variable bound by `httpd-servlet*'.")
 
 (defvar httpd-request nil
-  "Anaphoric variable for `defservlet*'.")
+  "Dynamic variable bound by `httpd-servlet*'.")
 
 (defvar httpd-split-path nil
-  "Anaphoric variable for `defservlet*'.")
+  "Dynamic variable bound by `httpd-servlet*'.")
 
-(defmacro defservlet* (endpoint mime args &rest body)
-  "Like `defservlet', but automatically bind variables/arguments to the request.
+(defmacro httpd-servlet* (endpoint mime args &rest body)
+  "Like `httpd-servlet', but automatically bind variables/arguments to the request.
 
 ENDPOINT is the path as symbol.
 MIME the mime-type as symbol.
@@ -620,7 +620,7 @@ BODY is the function body.
 Trailing components of the ENDPOINT can be bound by prefixing these
 components with a colon, acting like a template.
 
-    (defservlet* packages/:package/:version text/plain (verbose)
+    (httpd-servlet* packages/:package/:version text/plain (verbose)
       (insert (format \"%s\\n%s\\n\" package version))
       (princ (get-description package version))
       (when verbose
@@ -635,16 +635,15 @@ associated components of the URL.  Components not provided are
 bound to nil.  The query arguments can use the Common Lisp &key
 form (variable default provided-p).
 
-    (defservlet* greeting/:name text/plain ((greeting \"hi\" greeting-p))
+    (httpd-servlet* greeting/:name text/plain ((greeting \"hi\" greeting-p))
       (princ (format \"%s, %s (provided: %s)\" greeting name greeting-p)))
 
-The original path, query, and request can be accessed by the
-anaphoric special variables `httpd-path', `httpd-query', and
-`httpd-request'."
+The original path, query, and request can be accessed by the dynamically
+bound variables `httpd-path', `httpd-query', and `httpd-request'."
   (declare (indent defun))
   (cl-with-gensyms (path-lexical query-lexical request-lexical)
     (cl-multiple-value-bind (path vars) (httpd-parse-endpoint endpoint)
-      `(defservlet ,path ,mime (,path-lexical ,query-lexical ,request-lexical)
+      `(httpd-servlet ,path ,mime (,path-lexical ,query-lexical ,request-lexical)
          (let ((httpd-path ,path-lexical)
                (httpd-query ,query-lexical)
                (httpd-request ,request-lexical)
@@ -674,17 +673,17 @@ anaphoric special variables `httpd-path', `httpd-query', and
                                   `(not (null (assoc ,arg-name httpd-query)))))
                ,@body)))))))
 
-(defmacro httpd-def-file-servlet (name root)
+(defmacro httpd-file-servlet (name root)
   "Defines a servlet that serves files from ROOT under the route NAME.
 
-    (httpd-def-file-servlet my/www \"/var/www/\")
+    (httpd-file-servlet my/www \"/var/www/\")
 
 Automatically handles redirects and uses `httpd-serve-root' to
 actually serve up files."
   (let* ((short-root (directory-file-name (symbol-name name)))
          (path-root (concat short-root "/"))
          (chop (length path-root)))
-    `(defservlet ,name nil (uri-path query request)
+    `(httpd-servlet ,name nil (uri-path query request)
        (if (= (length uri-path) ,chop)
            (httpd-redirect t ,path-root)
          (httpd-serve-root t ,root (substring uri-path ,chop) request)))))
@@ -953,6 +952,12 @@ The INFO object is optionally inserted into page.  If PROC is t use the
   (condition-case error-case
       (apply #'httpd-error args)
     (error (httpd-log `(hard-error ,error-case)))))
+
+;; Old names. Not deprecated to avoid churn.
+(defalias 'defservlet #'httpd-servlet)
+(defalias 'defservlet* #'httpd-servlet*)
+(defalias 'httpd-def-file-servlet #'httpd-file-servlet)
+(defalias 'with-httpd-buffer #'httpd-with-buffer)
 
 (provide 'simple-httpd)
 ;;; simple-httpd.el ends here
