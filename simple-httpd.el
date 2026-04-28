@@ -916,13 +916,12 @@ the `httpd-current-proc' as the process."
           (httpd-send-header proc "text/html" 200)))
     (httpd-redirect proc (concat uri-path "/"))))
 
-(defun httpd--buffer-size (&optional buffer)
-  "Get the BUFFER size in bytes."
+(defun httpd--buffer-size ()
+  "Get size of current buffer in bytes."
   (let ((orig enable-multibyte-characters))
-    (with-current-buffer (or buffer (current-buffer))
-      (set-buffer-multibyte nil)
-      (prog1 (buffer-size)
-        (when orig (set-buffer-multibyte orig))))))
+    (set-buffer-multibyte nil)
+    (prog1 (buffer-size)
+      (when orig (set-buffer-multibyte orig)))))
 
 (defun httpd-error (proc status &optional info)
   "Send an error page appropriate for STATUS to the client.
