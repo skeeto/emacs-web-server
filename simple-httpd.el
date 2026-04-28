@@ -460,12 +460,11 @@ PROC is the client process and CHUNK is part of the request as string."
                            (address ,(car (process-contact proc)))
                            (path ,uri-path)
                            (query ,uri-query)
+                           (servlet ,servlet)
                            (headers . ,request)))
-              (if (null servlet)
-                  (httpd--error-safe proc 404)
-                (condition-case error-case
-                    (funcall servlet proc uri-path uri-query request)
-                  (error (httpd--error-safe proc 500 error-case))))
+              (condition-case error-case
+                  (funcall servlet proc uri-path uri-query request)
+                (error (httpd--error-safe proc 500 error-case)))
               (when (httpd--connection-close-p request)
                 (process-send-eof proc)))))))))
 
