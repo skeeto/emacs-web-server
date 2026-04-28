@@ -359,7 +359,7 @@ If the server is already running, this will restart the server.  There
 is only one server instance per Emacs instance."
   (interactive)
   (httpd-stop)
-  (httpd-log `(start ,(current-time-string)))
+  (httpd-log `(start ,(httpd-date-string)))
   (setq httpd--server
         (make-network-process
          :name     "httpd"
@@ -381,7 +381,7 @@ is only one server instance per Emacs instance."
     (delete-process httpd--server)
     (setq httpd--server nil
           httpd--clients nil)
-    (httpd-log `(stop ,(current-time-string)))
+    (httpd-log `(stop ,(httpd-date-string)))
     (run-hooks 'httpd-stop-hook)))
 
 ;;;###autoload
