@@ -318,28 +318,15 @@ Set to nil to disable logging."
   "HTTP status codes.")
 
 (defvar httpd-html
-  '((403 . "<!DOCTYPE html>
-<html><head>
-<title>403 Forbidden</title>
-</head><body>
-<h1>Forbidden</h1>
-<p>The requested URL is forbidden.</p>
-<pre>%s</pre>
-</body></html>")
-    (404 . "<!DOCTYPE html>
-<html><head>
-<title>404 Not Found</title>
-</head><body>
-<h1>Not Found</h1>
+  '((404 . "<!DOCTYPE html>
+<html><head><title>%n %t</title></head><body>
+<h1>%n %t</h1>
 <p>The requested URL was not found on this server.</p>
-<pre>%s</pre>
-</body></html>")
-    (500 . "<!DOCTYPE html>
-<html><head>
-<title>500 Internal Error</title>
-</head><body>
-<h1>500 Internal Error</h1>
-<p>Internal error when handling this request.</p>
+<pre>%s</pre></body></html>")
+    (t . "<!DOCTYPE html>
+<html><head><title>%n %t</title></head><body>
+<h1>%n %t</h1>
+<p>An error occurred.</p>
 <pre>%s</pre>
 </body></html>"))
   "HTML for various errors.")
@@ -934,22 +921,27 @@ The INFO object is optionally inserted into page.  If PROC is t use the
 `httpd-current-proc' as the process."
   (httpd-log `(error ,status ,info))
   (httpd--ensure-buffer
-    (let ((html (alist-get status httpd-html ""))
-          (contents
-           (if (not info)
-               ""
-             (with-temp-buffer
-               (let ((standard-output (current-buffer)))
-                 (insert "error: ")
-                 (princ info)
-                 (insert "\n")
-                 (when httpd-show-backtrace-when-error
-                   (insert "backtrace: ")
-                   (princ (backtrace))
-                   (insert "\n"))
-                 (httpd-escape-html-buffer)
-                 (buffer-string))))))
-      (insert (format html contents)))
+    (let ((contents
+           (if (or info httpd-show-backtrace-when-error)
+               (with-temp-buffer
+                 (let ((standard-output (current-buffer)))
+                   (when info
+                     (insert "error: ")
+                     (princ info)
+                     (insert "\n"))
+                   (when httpd-show-backtrace-when-error
+                     (insert "backtrace:\n")
+                     (backtrace)
+                     (insert "\n"))
+                   (httpd-escape-html-buffer)
+                   (buffer-string)))
+             "")))
+      (insert (format-spec
+               (or (alist-get status httpd-html)
+                   (alist-get t httpd-html))
+               `((?s . ,contents)
+                 (?n . ,status)
+                 (?t . ,(alist-get status httpd-status-codes))))))
     (httpd-send-header proc "text/html" status)))
 
 (defun httpd--error-safe (&rest args)
