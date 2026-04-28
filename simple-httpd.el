@@ -390,7 +390,7 @@ is only one server instance per Emacs instance."
   "Start the web server with given DIRECTORY as `httpd-root'.
 If DIRECTORY is nil use the current `default-directory'."
   (interactive "DServe directory: \n")
-  (setf httpd-root (or directory default-directory))
+  (setq httpd-root (or directory default-directory))
   (httpd-start)
   (message "Started simple-httpd on %s:%d, serving: %s"
            (cl-case httpd-host
@@ -442,7 +442,7 @@ PROC is the client process and CHUNK is part of the request as string."
     (insert chunk)
     (let ((request (process-get proc :request)))
       (unless request
-        (when (setf request (httpd-parse))
+        (when (setq request (httpd-parse))
           (delete-region (point-min) (point))
           (process-put proc :request request)))
       (when request
@@ -458,7 +458,7 @@ PROC is the client process and CHUNK is part of the request as string."
                    (servlet (httpd-get-servlet uri-path)))
               (erase-buffer)
               (process-put proc :request nil)
-              (setf request (nreverse (cons (list "Content" content)
+              (setq request (nreverse (cons (list "Content" content)
                                             (nreverse request))))
               (httpd-log `(request
                            (date ,(httpd-date-string))
@@ -501,13 +501,13 @@ MESSAGE describes the state change."
   "Pretty print ITEM to the log."
   (when httpd-log-buffer
     (with-current-buffer (get-buffer-create httpd-log-buffer)
-      (setf buffer-read-only nil)
+      (setq buffer-read-only nil)
       (let ((follow (eobp)))
         (save-excursion
           (goto-char (point-max))
           (pp item (current-buffer)))
         (if follow (goto-char (point-max))))
-      (setf truncate-lines t
+      (setq truncate-lines t
             buffer-read-only t)
       (set-buffer-modified-p nil))))
 
@@ -559,7 +559,7 @@ set to this output buffer and `httpd-current-proc' is set to PROC."
 (defun httpd-discard-buffer ()
   "Don't respond using current server buffer (`httpd-with-buffer').
 Returns a process for future response."
-  (when (eq major-mode 'httpd-buffer) (setf httpd--header-sent t))
+  (when (eq major-mode 'httpd-buffer) (setq httpd--header-sent t))
   httpd-current-proc)
 
 (defmacro httpd-servlet (name mime path-query-request &rest body)
