@@ -517,7 +517,7 @@ MESSAGE describes the state change."
 (defvar-local httpd--header-sent nil
   "Buffer-local variable indicating if the header has been sent.")
 
-(defun httpd-resolve-proc (proc)
+(defsubst httpd--resolve-proc (proc)
   "Return the correct process to use.
 Return `httpd-current-proc' if PROC is t."
   (if (eq t proc) httpd-current-proc proc))
@@ -861,9 +861,9 @@ Extra headers can be sent by supplying them like keywords, i.e.
                         ,@(cl-loop for (header value) on header-keys by #'cddr collect
                                    (format "%s: %s\r\n" (httpd--stringify header) value))
                         "\r\n")))
-    (process-send-string (httpd-resolve-proc proc)
+    (process-send-string (httpd--resolve-proc proc)
                          (apply #'concat header-list))
-    (process-send-region (httpd-resolve-proc proc)
+    (process-send-region (httpd--resolve-proc proc)
                          (point-min) (point-max))))
 
 (defun httpd-redirect (proc path &optional code)
@@ -958,6 +958,7 @@ The INFO object is optionally inserted into page.  If PROC is t use the
 (defalias 'defservlet* #'httpd-servlet*)
 (defalias 'httpd-def-file-servlet #'httpd-file-servlet)
 (defalias 'with-httpd-buffer #'httpd-with-buffer)
+(defalias 'httpd-resolve-proc #'httpd--resolve-proc)
 
 (provide 'simple-httpd)
 ;;; simple-httpd.el ends here
