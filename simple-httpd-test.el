@@ -68,19 +68,25 @@
   "Test server header output."
   (with-temp-buffer
     (set-buffer-multibyte nil)
-    (let ((buffer (current-buffer)))
-      (httpd--flet ((process-send-region (_proc _start _end)
-                      (let ((send-buffer (current-buffer)))
-                        (with-current-buffer buffer
-                          (insert-buffer-substring send-buffer))))
-                    (process-send-string (_proc str)
-                      (with-current-buffer buffer
-                        (insert str))))
-        (httpd-send-header nil "text/html" 404 :Foo "bar")))
-    (let ((out (httpd-parse)))
-      (should (equal (cadar out) "404"))
-      (should (equal (cadr (assoc "Content-Type" out)) "text/html; charset=utf-8"))
-      (should (equal (cadr (assoc "Foo" out)) "bar")))))
+    (let ((out (current-buffer)))
+      (with-temp-buffer
+        (set-buffer-multibyte nil)
+        (httpd--flet ((process-send-region (_proc start end)
+                        (let ((send-buffer (current-buffer)))
+                          (with-current-buffer out
+                            (insert-buffer-substring send-buffer start end))))
+                      (process-send-string (_proc str)
+                        (with-current-buffer out
+                          (insert str))))
+          (insert "content")
+          (httpd-send-header nil "text/html" 404 :Foo "bar"))))
+    (let ((h (httpd-parse)))
+      (should (equal (car h) '("HTTP/1.1" "404" "Not Found")))
+      (should (equal (cdr (assoc "Content-Type" h)) '("text/html; charset=utf-8")))
+      (should (equal (cdr (assoc "Content-Length" h)) '("7")))
+      (should (equal (cdr (assoc "Connection" h)) '("keep-alive")))
+      (should (equal (cdr (assoc "Server" h)) (list httpd-server-name)))
+      (should (equal (cdr (assoc "Foo" h)) '("bar"))))))
 
 (ert-deftest httpd-get-servlet-test ()
   "Test servlet dispatch."
