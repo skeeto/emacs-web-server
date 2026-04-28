@@ -683,8 +683,8 @@ actually serve up files."
 
 ;; Request parsing
 
-(defun httpd--normalize-header (header)
-  "Destructively capitalize the components of HEADER."
+(defsubst httpd--normalize-header (header)
+  "Capitalize the components of HEADER."
   (replace-regexp-in-string "[^-]+" #'capitalize header t))
 
 (defun httpd-parse ()
