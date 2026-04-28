@@ -192,8 +192,9 @@ Set to nil to disable logging."
   "Hook to run when the server has stopped."
   :type 'hook)
 
-(defvar httpd-server-name (format "simple-httpd (Emacs %s)" emacs-version)
-  "String to use in the Server header.")
+(defcustom httpd-server-name (format "simple-httpd (Emacs %s)" emacs-version)
+  "String to use in the Server header."
+  :type 'string)
 
 (defvar httpd-mime-types
   ;; IDEA: parse /etc/mime.types and use here as well. Alternatively use
