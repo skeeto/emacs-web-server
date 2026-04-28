@@ -6,7 +6,7 @@
 ;; Maintainer: Philip Kaludercic <philipk@posteo.net>, Daniel Mendler <mail@daniel-mendler.de>
 ;; URL: https://github.com/skeeto/emacs-http-server
 ;; Version: 1.5.1
-;; Package-Requires: ((emacs "26.1") (compat "30"))
+;; Package-Requires: ((emacs "27.1") (compat "30"))
 ;; Keywords: network, comm
 
 ;;; Commentary:
