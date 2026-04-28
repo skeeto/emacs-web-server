@@ -53,10 +53,9 @@
     (insert "GET /f%20b HTTP/1.1\r\n"
             "Host: localhost:8080\r\n"
             "DNT: 1, 2\r\n\r\n")
-    (let ((p (httpd-parse)))
-      (should (equal (cadar p) "/f%20b"))
-      (should (equal (cadr (assoc "Host" p)) "localhost:8080"))
-      (should (equal (cadr (assoc "Dnt" p)) "1, 2")))))
+    (should (equal (httpd-parse) '(("GET" "/f%20b" "HTTP/1.1")
+                                   ("Host" "localhost:8080")
+                                   ("Dnt" "1, 2"))))))
 
 (ert-deftest httpd-parse-uri-test ()
   "Test URI parsing."
