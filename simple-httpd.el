@@ -853,11 +853,11 @@ Extra headers can be sent by supplying them like keywords, i.e.
                                    (format "%s: %s\r\n" header value))
                         ,@(cl-loop for (header value) on header-keys by #'cddr collect
                                    (format "%s: %s\r\n" (httpd--stringify header) value))
-                        "\r\n")))
-    (process-send-string (httpd--resolve-proc proc)
-                         (apply #'concat header-list))
-    (process-send-region (httpd--resolve-proc proc)
-                         (point-min) (point-max))))
+                        "\r\n"))
+         (proc (httpd--resolve-proc proc)))
+    (process-send-string proc (apply #'concat header-list))
+    (unless (= (point-min) (point-max))
+      (process-send-region proc (point-min) (point-max)))))
 
 (defun httpd-redirect (proc path &optional code)
   "Redirect the client to PATH (default 301).
