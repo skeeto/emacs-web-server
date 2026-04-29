@@ -488,6 +488,7 @@ PROC is the client process and CHUNK is part of the request as string."
   "Runs when a client PROC closes the connection.
 MESSAGE describes the state change."
   (unless (string-prefix-p "open " message)
+    (httpd-log `(close ,(car (process-contact proc))))
     (cl-callf2 delq proc httpd--clients)
     (when-let* ((buffer (process-get proc :request-buffer)))
       (kill-buffer buffer))))
