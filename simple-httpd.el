@@ -437,24 +437,28 @@ PROC is the client process and CHUNK is part of the request as string."
           (delete-region (point-min) (point))
           (process-put proc :request request)))
       (when request
-        (let ((content-length (cadr (assoc "Content-Length" request))))
-          (when (or (null content-length)
-                    (= (buffer-size) (string-to-number content-length)))
+        (let* ((buf-len (buffer-size))
+               (content-len (cadr (assoc "Content-Length" request)))
+               (content-len (if content-len
+                                (string-to-number content-len)
+                              buf-len)))
+          (when (>= buf-len content-len)
             (let* ((uri (cadar request))
                    (parsed-uri (httpd-parse-uri (concat uri)))
                    (uri-path (httpd-unhex (nth 0 parsed-uri)))
                    (uri-query (nth 1 parsed-uri))
                    (servlet (httpd-get-servlet uri-path))
-                   ;; IDEA: Avoid allocating content string here. Instead erase
-                   ;; buffer later after the call to the servlet. The servlet
-                   ;; should then access the :request-buffer itself.
-                   (content (buffer-string))
+                   ;; IDEA: Avoid allocating content string here. The servlet
+                   ;; could access the :request-buffer itself, however the
+                   ;; buffer may already contain parts of the next request.
+                   (content-end (+ (point-min) content-len))
+                   (content (buffer-substring (point-min) content-end))
                    (content-type (cadr (assoc "Content-Type" request))))
               (when (and (stringp content-type)
                          (string-prefix-p "application/x-www-form-urlencoded"
                                           content-type))
                 (setq uri-query (nconc uri-query (httpd-parse-args content))))
-              (erase-buffer)
+              (delete-region (point-min) content-end)
               (process-put proc :request nil)
               (nconc request `(("Content" ,content)))
               (httpd-log `(request
