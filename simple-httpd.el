@@ -422,8 +422,9 @@ Logs are redirected to stdout.  To use, invoke Emacs like this:
 
 (defun httpd--connection-close-p (request)
   "Return non-nil if the REQUEST has \"connection: close\"."
-  (or (equal "close" (cadr (assoc "Connection" request)))
-      (equal "HTTP/1.0" (caddar request))))
+  (let ((conn (cadr (assoc "Connection" request))))
+    (or (and (stringp conn) (string-equal-ignore-case conn "close"))
+        (equal "HTTP/1.0" (caddar request)))))
 
 (defun httpd--parse-content-args (request content)
   "Parse arguments in CONTENT string.
