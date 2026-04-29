@@ -449,7 +449,8 @@ PROC is the client process and CHUNK is part of the request as string."
                               (list request)))
           (process-put proc :request-pending request)
           (delete-region (point-min) (point)))
-        (when request
+        (cond
+         (request
           (if-let* ((len (httpd--content-length request)))
               (condition-case err
                   (when-let* ((content (httpd--content-string len)))
@@ -458,7 +459,10 @@ PROC is the client process and CHUNK is part of the request as string."
                     (setq continue (not (process-get proc :closed))))
                 (error
                  (httpd--error-safe proc 500 err)))
-            (httpd--error-safe proc 411)))))))
+            (httpd--error-safe proc 411)))
+         ((looking-at-p "[^\r\n]*[\r\n]")
+          (process-put proc :request-queue '((("GET" "/bad" "HTTP/1.1"))))
+          (httpd--error-safe proc 400)))))))
 
 (defsubst httpd--new-buffer (name)
   "Generate new buffer NAME without calling buffer hooks."
