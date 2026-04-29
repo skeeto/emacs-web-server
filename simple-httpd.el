@@ -425,6 +425,14 @@ Logs are redirected to stdout.  To use, invoke Emacs like this:
   (or (equal "close" (cadr (assoc "Connection" request)))
       (equal "HTTP/1.0" (caddar request))))
 
+(defun httpd--parse-content-args (request content)
+  "Parse arguments in CONTENT string.
+REQUEST is the request header alist."
+  (when-let* ((content-type (cadr (assoc "Content-Type" request)))
+              ((string-prefix-p "application/x-www-form-urlencoded"
+                                content-type)))
+    (httpd-parse-args content)))
+
 (defun httpd--filter (proc chunk)
   "Process called each time client makes a request.
 PROC is the client process and CHUNK is part of the request as string."
@@ -432,10 +440,9 @@ PROC is the client process and CHUNK is part of the request as string."
     (goto-char (point-max))
     (insert chunk)
     (let ((request (process-get proc :request)))
-      (unless request
-        (when (setq request (httpd-parse))
-          (delete-region (point-min) (point))
-          (process-put proc :request request)))
+      (when (and (not request) (setq request (httpd-parse)))
+        (delete-region (point-min) (point))
+        (process-put proc :request request))
       (when request
         (let* ((buf-len (buffer-size))
                (content-len (cadr (assoc "Content-Length" request)))
@@ -443,21 +450,17 @@ PROC is the client process and CHUNK is part of the request as string."
                                 (string-to-number content-len)
                               buf-len)))
           (when (>= buf-len content-len)
-            (let* ((uri (cadar request))
+            ;; IDEA: Avoid allocating content string here. The servlet
+            ;; could access the :request-buffer itself, however the
+            ;; buffer may already contain parts of the next request.
+            (let* ((content-end (+ (point-min) content-len))
+                   (content (buffer-substring (point-min) content-end))
+                   (uri (cadar request))
                    (parsed-uri (httpd-parse-uri (concat uri)))
                    (uri-path (httpd-unhex (nth 0 parsed-uri)))
-                   (uri-query (nth 1 parsed-uri))
-                   (servlet (httpd-get-servlet uri-path))
-                   ;; IDEA: Avoid allocating content string here. The servlet
-                   ;; could access the :request-buffer itself, however the
-                   ;; buffer may already contain parts of the next request.
-                   (content-end (+ (point-min) content-len))
-                   (content (buffer-substring (point-min) content-end))
-                   (content-type (cadr (assoc "Content-Type" request))))
-              (when (and (stringp content-type)
-                         (string-prefix-p "application/x-www-form-urlencoded"
-                                          content-type))
-                (setq uri-query (nconc uri-query (httpd-parse-args content))))
+                   (uri-query (nconc (nth 1 parsed-uri)
+                                     (httpd--parse-content-args request content)))
+                   (servlet (httpd-get-servlet uri-path)))
               (delete-region (point-min) content-end)
               (process-put proc :request nil)
               (nconc request `(("Content" ,content)))
