@@ -13,6 +13,7 @@
 - Store server and client processes and shutdown all processes in ~httpd-stop~.
 - Parse body as arguments only for mime type ~application/x-www-form-urlencoded~.
 - Reduce creation of temporary buffers and improve performance.
+- Improve robustness with additional checks and better edge case handling.
 
 * Version 1.5.1: improvements
 
