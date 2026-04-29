@@ -434,9 +434,9 @@ PROC is the client process and CHUNK is part of the request as string."
     (let ((continue t) (request nil))
       (while continue
         (setq continue nil
-              request (process-get proc :request))
+              request (process-get proc :request-pending))
         (when (and (not request) (setq request (httpd-parse)))
-          (process-put proc :request request)
+          (process-put proc :request-pending request)
           (delete-region (point-min) (point)))
         (condition-case err
             (cond
@@ -445,11 +445,10 @@ PROC is the client process and CHUNK is part of the request as string."
                 (not (string-equal-ignore-case te "identity")))
               (httpd--error-safe proc 400 "Unsupported transfer encoding"))
              ((when-let* ((content (httpd--request-content request)))
+                (process-put proc :request-pending nil)
+                (process-put proc :request request)
                 (httpd--handle-request proc request content)
-                (process-put proc :request nil)
-                (if (httpd--connection-close-p request)
-                    (process-send-eof proc)
-                  (setq continue t)))))
+                (setq continue (not (process-get proc :closed))))))
           (error
            (httpd--error-safe proc 500 err)))))))
 
@@ -462,8 +461,7 @@ PROC is the client process and CHUNK is part of the request as string."
 (defun httpd--accept (_server proc _message)
   "Runs each time a new client PROC connects to the server."
   (push proc httpd--clients)
-  (with-current-buffer (httpd--new-buffer " *httpd-client*")
-    (process-put proc :request-buffer (current-buffer)))
+  (process-put proc :request-buffer (httpd--new-buffer " *httpd-client*"))
   (set-process-sentinel proc #'httpd--sentinel)
   (httpd-log `(connection ,(car (process-contact proc)))))
 
@@ -549,7 +547,14 @@ set to this output buffer and `httpd-current-proc' is set to PROC."
 
 (defun httpd-discard-buffer ()
   "Don't respond using current server buffer (`httpd-with-buffer').
-Returns a process for future response."
+Returns a process for future response.
+
+    (httpd-servlet slow text/plain ()
+      (let ((proc (httpd-discard-buffer)))
+        (run-with-timer 1 0
+         (lambda ()
+           (httpd-with-buffer proc \"text/plain\"
+             (insert \"Slow response\"))))))"
   (when (eq major-mode 'httpd-buffer) (setq httpd--header-sent t))
   httpd-current-proc)
 
@@ -833,7 +838,8 @@ Extra headers can be sent by supplying them like keywords, i.e.
     (error "Header already sent"))
   (setq httpd--header-sent t)
   (let* ((proc (httpd--resolve-proc proc))
-         (request (process-get proc :request))
+         (request (or (process-get proc :request)
+                      (error "No current request")))
          (status-str (alist-get status httpd-status-codes))
          (mime-str (httpd--stringify mime))
          (mime-str (if (and (string-prefix-p "text/" mime-str)
@@ -844,15 +850,13 @@ Extra headers can be sent by supplying them like keywords, i.e.
                        ;; times as before.
                        (concat mime-str "; charset=utf-8")
                      mime-str))
+         (close (httpd--connection-close-p request))
          (headers `(("Server" . ,httpd-server-name)
                     ("Date" . ,(httpd-date-string))
                     ("Content-Type" . ,mime-str)
                     ("Content-Length" . ,(httpd--buffer-size))
-                    ("Connection" . ,(if (httpd--connection-close-p request)
-                                         "close" "keep-alive"))))
-         (header-list `(,(format "%s %d %s\r\n"
-                                 (or (caddar request) "HTTP/1.1")
-                                 status status-str)
+                    ("Connection" . ,(if close "close" "keep-alive"))))
+         (header-list `(,(format "%s %d %s\r\n" (caddar request) status status-str)
                         ,@(cl-loop for (header . value) in headers collect
                                    (format "%s: %s\r\n" header value))
                         ,@(cl-loop for (header value) on header-keys by #'cddr collect
@@ -860,7 +864,11 @@ Extra headers can be sent by supplying them like keywords, i.e.
                         "\r\n")))
     (process-send-string proc (apply #'concat header-list))
     (unless (or (= (point-min) (point-max)) (equal "HEAD" (caar request)))
-      (process-send-region proc (point-min) (point-max)))))
+      (process-send-region proc (point-min) (point-max)))
+    (process-put proc :request nil)
+    (when close
+      (process-put proc :closed t)
+      (process-send-eof proc))))
 
 (defun httpd-redirect (proc path &optional code)
   "Redirect the client to PATH (default 301).

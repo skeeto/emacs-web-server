@@ -71,6 +71,8 @@
       (with-temp-buffer
         (set-buffer-multibyte nil)
         (httpd--flet ((process-get (_proc _prop) request)
+                      (process-put (_proc _prop _val))
+                      (process-send-eof (_proc))
                       (process-send-region (_proc start end)
                         (let ((send-buffer (current-buffer)))
                           (with-current-buffer out
@@ -84,7 +86,8 @@
 
 (ert-deftest httpd-send-header-test ()
   "Test server header output."
-  (let ((h (httpd-send-header-test-helper nil "text/html" 404 :Foo "bar")))
+  (let ((h (httpd-send-header-test-helper '(("GET" "/" "HTTP/1.1"))
+                                          "text/html" 404 :Foo "bar")))
     (should (equal (car h) '("HTTP/1.1" "404" "Not Found")))
     (should (equal (cdr (assoc "Content-Type" h)) '("text/html; charset=utf-8")))
     (should (equal (cdr (assoc "Content-Length" h)) '("7")))
