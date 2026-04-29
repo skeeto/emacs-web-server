@@ -127,6 +127,7 @@
   (should (equal (httpd-parse-args "na=foo&v=1") '(("na" "foo") ("v" "1"))))
   (should (equal (httpd-parse-args "foo=bar=baz") '(("foo" "bar" "baz"))))
   (should (equal (httpd-parse-args "foo&bar") '(("foo") ("bar"))))
+  (should (equal (httpd-parse-args "foo&&bar&&") '(("foo") ("bar"))))
   (should (equal (httpd-parse-args "") ())))
 
 (ert-deftest httpd-parse-endpoint ()

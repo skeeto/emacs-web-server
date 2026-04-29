@@ -760,7 +760,7 @@ if it failed to parse a complete HTTP header."
   (unless (equal argstr "")
     (mapcar (lambda (str)
               (mapcar #'httpd-unhex (split-string str "=")))
-            (split-string argstr "&"))))
+            (split-string argstr "&" t))))
 
 (defun httpd-parse-uri (uri)
   "Split a URI into its components.
