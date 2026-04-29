@@ -403,7 +403,7 @@ Logs are redirected to stdout.  To use, invoke Emacs like this:
 
 (defun httpd-date-string (&optional date)
   "Return DATE as HTTP date string (RFC 1123)."
-  (format-time-string "%a, %e %b %Y %T GMT" date t))
+  (format-time-string "%a, %d %b %Y %T GMT" date t))
 
 (defun httpd-etag (file)
   "Compute the ETag for FILE."
@@ -899,7 +899,7 @@ process."
     (let ((etag (httpd-etag path)))
       (if (not (equal (cadr (assoc "If-None-Match" req)) etag))
           (let ((mime (httpd-get-mime (file-name-extension path)))
-                (mtime (httpd-date-string (nth 4 (file-attributes path)))))
+                (mtime (httpd-date-string (nth 5 (file-attributes path)))))
             (httpd-log `(file ,path))
             (set-buffer-multibyte nil)
             (insert-file-contents-literally path)
