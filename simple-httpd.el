@@ -95,46 +95,6 @@
 ;; route on the server, use `httpd-file-servlet'.  It expands into
 ;; a `httpd-servlet' that serves files.
 
-;;; History:
-
-;; Version 1.5.1: improvements
-;;   * Add `httpd-running-p'
-;;   * Properly handle "Connection: close" and HTTP/1.0
-;; Version 1.5.0: improvements
-;;   * Drastically improved performance for large requests
-;;   * More HTTP status codes
-;; Version 1.4.6: fixes
-;;   * Added httpd-serve-directory
-;;   * Fix some encoding issues
-;; Version 1.4.5: fixes
-;;   * Update to cl-lib from cl
-;; Version 1.4.4: features
-;;   * Common Lisp &key-like defservlet* argument support
-;;   * Fix up some defservlet* usage warnings.
-;; Version 1.4.3: features
-;;   * Add `httpd-discard-buffer'
-;;   * Add `httpd-def-file-servlet'
-;;   * Be more careful about not sending extra headers
-;; Version 1.4.2: features, fixes
-;;   * `defservlet*' macro
-;; Version 1.4.1: small bug fixes, one feature
-;;   * All mime-type parameters now accept string designators
-;;   * Documentation update
-;; Version 1.4.0: features, API change, and fixes
-;;   * Removed httpd-send-buffer; httpd-send-header now does this implicitly
-;;   * httpd-send-header now accepts keywords instead
-;;   * Fix httpd-clean-path in Windows
-;;   * Fix a content-length bug
-;;   * defservlet fontification
-;; Version 1.3.1: features and fixes
-;;   * Set `standard-output' in `with-httpd-buffer'
-;; Version 1.3.0: security fix
-;;   * Fix path expansion security issue
-;;   * Fix coding system (don't default)
-;; Version 1.2.4: fixes
-;;   * Handle large POSTs
-;;   * Fix date strings
-
 ;;; Code:
 
 (eval-when-compile (require 'subr-x))
