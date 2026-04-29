@@ -413,17 +413,25 @@ PROC is the client process."
                  (headers . ,request)))
     (funcall servlet proc uri-path uri-query request)))
 
-(defun httpd--request-content (request)
-  "Return content of REQUEST as string if it is fully transmitted.
+(defun httpd--content-string (len)
+  "Return request content of length LEN if it is fully transmitted.
 Return nil if transmission is incomplete."
-  (if-let* ((len (cadr (assoc "Content-Length" request))))
-      (when (>= (buffer-size) (setq len (string-to-number len)))
+  (if (> len 0)
+      (when (>= (buffer-size) len)
         ;; IDEA: Avoid allocating content string here. The servlet could
         ;; access the :request-buffer itself, however the buffer can already
         ;; contain a part of the next request.
         (prog1 (buffer-substring (point-min) (setq len (+ (point-min) len)))
           (delete-region (point-min) len)))
     ""))
+
+(defun httpd--content-length (request)
+  "Return content length of REQUEST."
+  (let* ((te (cadr (assoc "Transfer-Encoding" request)))
+         (len (cadr (assoc "Content-Length" request))))
+    (when (and (or (not te) (string-equal-ignore-case te "identity"))
+               (or (not len) (string-match-p "\\`[0-9]+\\'" len)))
+      (if len (string-to-number len) 0))))
 
 (defun httpd--filter (proc chunk)
   "Process called each time client makes a request.
@@ -438,19 +446,17 @@ PROC is the client process and CHUNK is part of the request as string."
         (when (and (not request) (setq request (httpd-parse)))
           (process-put proc :request-pending request)
           (delete-region (point-min) (point)))
-        (condition-case err
-            (cond
-             ((not request))
-             ((when-let* ((te (cadr (assoc "Transfer-Encoding" request))))
-                (not (string-equal-ignore-case te "identity")))
-              (httpd--error-safe proc 400 "Unsupported transfer encoding"))
-             ((when-let* ((content (httpd--request-content request)))
-                (process-put proc :request-pending nil)
-                (process-put proc :request request)
-                (httpd--handle-request proc request content)
-                (setq continue (not (process-get proc :closed))))))
-          (error
-           (httpd--error-safe proc 500 err)))))))
+        (when request
+          (if-let* ((len (httpd--content-length request)))
+              (condition-case err
+                  (when-let* ((content (httpd--content-string len)))
+                    (process-put proc :request-pending nil)
+                    (process-put proc :request request)
+                    (httpd--handle-request proc request content)
+                    (setq continue (not (process-get proc :closed))))
+                (error
+                 (httpd--error-safe proc 500 err)))
+            (httpd--error-safe proc 400 "Invalid content length")))))))
 
 (defsubst httpd--new-buffer (name)
   "Generate new buffer NAME without calling buffer hooks."
