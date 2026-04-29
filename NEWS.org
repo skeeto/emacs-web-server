@@ -2,6 +2,18 @@
 
 * Development
 
+- Depend on Compat, update for new Emacs versions.
+- ~httpd-servlet~, ~httpd-servlet*~, ~httpd-file-servlet~, ~httpd-with-buffer~:
+  Alternative name for ~defservlet~, ~defservlet*~, ~httpd-def-file-servlet~ and
+  ~with-httpd-buffer~ respectively.
+- ~httpd-log-buffer~: New customizable variable for the log buffer. Optimize
+  ~httpd-log~ if the log buffer is disabled.
+- ~httpd-html~, ~httpd-error~: Numeric and textual status code are passed as
+  arguments to ~format~. Add default error page.
+- Store server and client processes and shutdown all processes in ~httpd-stop~.
+- Parse body as arguments only for mime type ~application/x-www-form-urlencoded~.
+- Reduce creation of temporary buffers and improve performance.
+
 * Version 1.5.1: improvements
 
 - Add ~httpd-running-p~
