@@ -71,7 +71,8 @@
     (let ((out (current-buffer)))
       (with-temp-buffer
         (set-buffer-multibyte nil)
-        (httpd--flet ((process-send-region (_proc start end)
+        (httpd--flet ((process-get (_proc _prop) nil)
+                      (process-send-region (_proc start end)
                         (let ((send-buffer (current-buffer)))
                           (with-current-buffer out
                             (insert-buffer-substring send-buffer start end))))
