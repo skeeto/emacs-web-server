@@ -809,10 +809,8 @@ element is the fragment."
 
 (defun httpd-clean-path (path)
   "Clean dangerous .. from PATH and remove the leading slash."
-  (let* ((sep (if (member system-type '(windows-nt ms-dos)) "[/\\]" "/"))
-         (split (delete ".." (split-string path sep)))
-         (unsplit (string-join (delete "" split) "/")))
-    (concat "./" unsplit)))
+  (let ((sep (if (memq system-type '(windows-nt ms-dos)) "[/\\]" "/")))
+    (concat "./" (string-join (delete ".." (split-string path sep t)) "/"))))
 
 (defun httpd-gen-path (path &optional root)
   "Generate secure path in ROOT from request PATH.
