@@ -660,8 +660,7 @@ bound variables `httpd-path', `httpd-query', and `httpd-request'."
                (httpd-split-path (split-string
                                   (substring ,path-lexical 1) "/")))
            (let ,(cl-loop for (var . pos) in vars
-                          for extract =
-                          `(httpd-unhex (nth ,pos httpd-split-path))
+                          for extract = `(nth ,pos httpd-split-path)
                           collect (list var extract))
              (let ,(cl-loop for arg in args
                             for has-default = (listp arg)
