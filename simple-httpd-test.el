@@ -62,7 +62,7 @@
   (should (equal (httpd-parse-uri "foo?k=v#fragment") '("foo" (("k" "v")) "fragment")))
   (should (equal (httpd-parse-uri "foo#fragment?k=v") '("foo" nil "fragment?k=v")))
   (should (equal (httpd-parse-uri "/foo/bar%20baz.html?q=test%26case&v=10#page10")
-                 '("/foo/bar%20baz.html" (("q" "test&case") ("v" "10")) "page10"))))
+                 '("/foo/bar baz.html" (("q" "test&case") ("v" "10")) "page10"))))
 
 (defun httpd-send-header-test-helper (request &rest args)
   (with-temp-buffer
@@ -120,15 +120,16 @@
 
 (ert-deftest httpd-unhex-test ()
   "Test URL decoding."
-  (should (equal (httpd-unhex "I+%2Bam%2B+foo.") "I +am+ foo."))
+  (should (equal (httpd-unhex-plus "I+%2Bam%2B+foo.") "I +am+ foo."))
+  (should (equal (httpd-unhex "I+%2Bam%2B+foo.") "I++am++foo."))
   (should (equal (httpd-unhex "foo%0D%0Abar") "foo\nbar"))
-  (should (equal (httpd-unhex "na%C3%AFve") "naïve"))
-  (should (eq (httpd-unhex nil) nil)))
+  (should (equal (httpd-unhex "na%C3%AFve") "naïve")))
 
 (ert-deftest httpd-parse-args-test ()
   "Test argument parsing."
+  (should (equal (httpd-parse-args "foo=bar+baz") '(("foo" "bar baz"))))
   (should (equal (httpd-parse-args "na=foo&v=1") '(("na" "foo") ("v" "1"))))
-  (should (equal (httpd-parse-args "foo=bar=baz") '(("foo" "bar" "baz"))))
+  (should (equal (httpd-parse-args "foo=bar=baz") '(("foo" "bar=baz"))))
   (should (equal (httpd-parse-args "foo&bar") '(("foo") ("bar"))))
   (should (equal (httpd-parse-args "foo&&bar&&") '(("foo") ("bar"))))
   (should (equal (httpd-parse-args "") ())))

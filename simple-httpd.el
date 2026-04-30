@@ -399,7 +399,7 @@ Logs are redirected to stdout.  To use, invoke Emacs like this:
             (delete-process proc))
         (let* ((uri (cadar request))
                (parsed-uri (httpd-parse-uri (concat uri)))
-               (uri-path (httpd-unhex (car parsed-uri)))
+               (uri-path (car parsed-uri))
                (uri-query (nconc (cadr parsed-uri)
                                  (httpd--parse-content-args request)))
                (servlet (httpd-get-servlet uri-path)))
@@ -724,19 +724,24 @@ if it failed to parse a complete HTTP header."
         (goto-char (match-end 0))
         (cons (list method path version) (nreverse headers))))))
 
-(defun httpd-unhex (str)
-  "Fully decode the URL encoding in STR (including +'s)."
-  (when str
-    (decode-coding-string
-     (url-unhex-string (string-replace "+" " " str) t)
-     'utf-8)))
+(defsubst httpd-unhex (str)
+  "Fully decode the URL encoding in STR."
+  (decode-coding-string (url-unhex-string str t) 'utf-8))
 
-(defun httpd-parse-args (argstr)
-  "Parse ARGSTR containing URL encoded arguments."
-  (unless (equal argstr "")
-    (mapcar (lambda (str)
-              (mapcar #'httpd-unhex (split-string str "=")))
-            (split-string argstr "&" t))))
+(defsubst httpd-unhex-plus (str)
+  "Fully decode URL/form encoding in STR, treating `+' as space."
+  (httpd-unhex (string-replace "+" " " str)))
+
+(defun httpd-parse-args (str)
+  "Parse STR containing URL/form encoded arguments."
+  (unless (equal str "")
+    (mapcar
+     (lambda (s)
+       (if-let* ((i (string-search "=" s)))
+         (list (httpd-unhex-plus (substring s 0 i))
+               (httpd-unhex-plus (substring s (1+ i))))
+         (list (httpd-unhex-plus s))))
+     (split-string str "&" t))))
 
 (defun httpd-parse-uri (uri)
   "Split a URI into its components.
@@ -747,7 +752,7 @@ element is the fragment."
         (h (string-search "#" uri)))
     (when (and q h (> q h))
       (setq q nil))
-    (list (substring uri 0 (or q h))
+    (list (httpd-unhex (substring uri 0 (or q h)))
           (and q (httpd-parse-args (substring uri (1+ q) h)))
           (and h (httpd-unhex (substring uri (1+ h)))))))
 
