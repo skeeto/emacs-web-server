@@ -709,13 +709,13 @@ actually serve up files."
 Leaves the point at the start of the request content.  Returns nil
 if it failed to parse a complete HTTP header."
   (goto-char (point-min))
-  (when (looking-at "\\([^ ]+\\) +\\([^ ]+\\) +\\([^\r]+\\)\r\n")
+  (when (looking-at "\\([^ \r\n]+\\) +\\([^ \r\n]+\\) +\\([^\r\n]+\\)\r\n")
     (let ((method (match-string 1))
           (path (decode-coding-string (match-string 2) 'iso-8859-1))
           (version (match-string 3))
           (headers nil))
       (goto-char (match-end 0))
-      (while (looking-at "\\([-!#-'*+.0-9A-Z^_`a-z|~]+\\): *\\([^\r]+\\)\r\n")
+      (while (looking-at "\\([-!#-'*+.0-9A-Z^_`a-z|~]+\\): *\\([^\r\n]+\\)\r\n")
         (goto-char (match-end 0))
         (let ((name (match-string 1))
               (value (match-string 2)))
