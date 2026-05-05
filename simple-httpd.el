@@ -156,6 +156,10 @@ Set to nil to disable logging."
   "Hook to run when the server has stopped."
   :type 'hook)
 
+(defcustom httpd-filter-functions nil
+  "Functions called with request as argument, should return modified request."
+  :type 'hook)
+
 (defcustom httpd-server-name (format "simple-httpd (Emacs %s)" emacs-version)
   "String to use in the Server header."
   :type '(choice (const nil) string))
@@ -391,7 +395,12 @@ Logs are redirected to stdout.  To use, invoke Emacs like this:
 (defun httpd--handle-request (proc request)
   "Handle REQUEST from client PROC."
   (condition-case err
-      (let* ((uri (cadar request))
+      (let* ((_ (run-hook-wrapped
+                 'httpd-filter-functions
+                 (lambda (fun)
+                   (setq request (funcall fun request))
+                   nil)))
+             (uri (cadar request))
              (parsed-uri (httpd-parse-uri (concat uri)))
              (uri-path (car parsed-uri))
              (uri-query (nconc (cadr parsed-uri)
