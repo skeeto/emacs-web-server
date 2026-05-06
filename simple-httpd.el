@@ -109,6 +109,7 @@
   :link '(emacs-library-link :tag "Library Source" "simple-httpd.el")
   :group 'network
   :group 'comm
+  :group 'web
   :prefix "httpd-")
 
 (defcustom httpd-ip-family 'ipv4
